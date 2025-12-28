@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quiz Review | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --green:#238636;
+    --red:#da3633;
+    --muted:#8b949e;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:18px;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* CONTENT */
+.container{
+    max-width:900px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.question-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.question-card h3{
+    color:var(--white);
+    margin-bottom:10px;
+}
+
+.option{
+    padding:10px 14px;
+    border-radius:6px;
+    margin:6px 0;
+    font-size:14px;
+    border:1px solid var(--border);
+}
+
+.correct{
+    background:#12261f;
+    border-color:var(--green);
+    color:#b7f5c8;
+}
+
+.wrong{
+    background:#2a1215;
+    border-color:var(--red);
+    color:#ffb3b3;
+}
+
+.neutral{
+    background:#0d1117;
+    color:var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('user_quizzes') }}">Scores</a>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+    <h1 style="color:var(--white); margin-bottom:20px;">Quiz Review</h1>
+
+    {% for q in questions %}
+    {% set ans = answer_map.get(q.question_id) %}
+    <div class="question-card">
+        <h3>Q{{ loop.index }}. {{ q.title }}</h3>
+        <p style="margin-bottom:12px;">{{ q.statement }}</p>
+
+        {% for i in [1,2,3,4] %}
+            {% set opt = getattr(q, 'option_' ~ i) %}
+
+            {% if i == q.correct_option %}
+                <div class="option correct">
+                    ✔ {{ opt }} (Correct)
+                </div>
+
+            {% elif ans and i == ans.selected_option %}
+                <div class="option wrong">
+                    ✖ {{ opt }} (Your Answer)
+                </div>
+
+            {% else %}
+                <div class="option neutral">
+                    {{ opt }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

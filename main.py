@@ -8,7 +8,7 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-
+from flask import send_from_directory
 from controller.config import Config
 from controller.database import db
 from controller.models import (
@@ -51,7 +51,7 @@ with app.app_context():
     if not admin_user:
         admin_user = User(
             username="admin",
-            email="admin@quizmaster.com",
+            email="admin@qma.com",
             password_hash=generate_password_hash("admin123"),
             full_name="System Admin"
         )
@@ -63,23 +63,7 @@ with app.app_context():
         ))
         db.session.commit()
 
-    # ---------------- SEED TEACHER ----------------
-    teacher_user = User.query.filter_by(username="teacher").first()
-    if not teacher_user:
-        teacher_user = User(
-            username="teacher",
-            email="teacher@quizmaster.com",
-            password_hash=generate_password_hash("teacher123"),
-            full_name="Default Teacher"
-        )
-        db.session.add(teacher_user)
-        db.session.commit()
-        db.session.add(UserRole(
-            user_id=teacher_user.user_id,
-            role_id=teacher_role.role_id
-        ))
-        db.session.add(Staff(user_id=teacher_user.user_id))
-        db.session.commit()
+   
 
 # ============================================================
 # HELPERS & DECORATORS
@@ -142,17 +126,18 @@ def home():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+
         user = User(
             username=request.form["username"],
             email=request.form["email"],
             password_hash=generate_password_hash(request.form["password"]),
             full_name=request.form["full_name"],
-            qualification=request.form.get("qualification"),
-            date_of_birth=request.form.get("date_of_birth")
         )
 
+        # Check duplicate user
         if User.query.filter(
-            (User.username == user.username) | (User.email == user.email)
+            (User.username == user.username) |
+            (User.email == user.email)
         ).first():
             flash("User already exists")
             return redirect(url_for("register"))
@@ -160,15 +145,32 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        role = Role.query.filter_by(name="user").first()
-        db.session.add(UserRole(user_id=user.user_id, role_id=role.role_id))
-        db.session.add(Student(user_id=user.user_id))
+        # 🔑 ROLE SELECTION (FIXED & SAFE)
+        selected_role = request.form.get("role", "student")
+
+        if selected_role == "teacher":
+            role = Role.query.filter_by(name="teacher").first()
+            db.session.add(UserRole(
+                user_id=user.user_id,
+                role_id=role.role_id
+            ))
+            db.session.add(Staff(user_id=user.user_id))
+        else:
+            # Default → student
+            role = Role.query.filter_by(name="user").first()
+            db.session.add(UserRole(
+                user_id=user.user_id,
+                role_id=role.role_id
+            ))
+            db.session.add(Student(user_id=user.user_id))
+
         db.session.commit()
 
         flash("Registration successful")
         return redirect(url_for("login"))
 
     return render_template("register.html")
+
 
 # ============================================================
 # LOGIN
@@ -234,8 +236,13 @@ def admin_login():
 @login_required
 @role_required("user")
 def user_dashboard():
-    return render_template("user/dashboard.html")
-
+    quizzes = Quiz.query.all()
+    return render_template(
+        "user/dashboard.html",
+        user=User.query.get(session["user_id"]),
+        quizzes=quizzes,
+        has_attempted=has_attempted
+    )
 
 @app.route("/teacher/dashboard")
 @login_required
@@ -343,9 +350,8 @@ def take_quiz(attempt_id):
         attempt=attempt,
         questions=questions
     )
-
 # ============================================================
-# SUBMIT QUIZ (ADDED)
+# USER — SUBMIT QUIZ
 # ============================================================
 @app.route("/quiz/attempt/<int:attempt_id>/submit", methods=["POST"])
 @login_required
@@ -354,51 +360,43 @@ def submit_quiz(attempt_id):
     attempt = QuizAttempt.query.get_or_404(attempt_id)
 
     if attempt.submitted:
-        flash("Already submitted")
+        flash("Quiz already submitted")
         return redirect(url_for("user_dashboard"))
+
+    questions = Question.query.filter_by(
+        quiz_id=attempt.quiz_id
+    ).all()
 
     score = 0
 
-    for q in Question.query.filter_by(quiz_id=attempt.quiz_id).all():
+    for q in questions:
         selected = request.form.get(f"question_{q.question_id}")
 
-        ua = UserAnswer(
-            attempt_id=attempt_id,
-            question_id=q.question_id,
-            selected_option=selected
-        )
-        db.session.add(ua)
+        if not selected:
+            continue
 
-        if selected == q.correct_option:
+        selected = int(selected)
+        is_correct = selected == q.correct_option
+
+        if is_correct:
             score += 1
 
+        db.session.add(UserAnswer(
+            attempt_id=attempt.attempt_id,
+            question_id=q.question_id,
+            selected_option=selected,
+            is_correct=is_correct
+        ))
+
     attempt.score = score
+    attempt.total_questions = len(questions)
     attempt.submitted = True
-    attempt.submitted_at = datetime.utcnow()
+    attempt.end_time = datetime.utcnow()
 
     db.session.commit()
 
-    flash(f"Quiz submitted. Score: {score}")
+    flash(f"Quiz submitted! Your score: {score}/{len(questions)}")
     return redirect(url_for("user_dashboard"))
-
-#  cheating----violaion #
-@app.route("/quiz/attempt/<int:attempt_id>/violation", methods=["POST"])
-@login_required
-@role_required("user")
-def record_violation(attempt_id):
-    attempt = QuizAttempt.query.get_or_404(attempt_id)
-
-    if attempt.submitted:
-        return {"status": "submitted"}
-
-    attempt.violations += 1
-    db.session.commit()
-
-    # Auto-submit after 3 violations
-    if attempt.violations >= 3:
-        return {"status": "force_submit"}
-
-    return {"status": "ok", "violations": attempt.violations}
 
 # ============================================================
 # USER — AUTO SAVE ANSWER (AJAX)
@@ -407,9 +405,12 @@ def record_violation(attempt_id):
 @login_required
 @role_required("user")
 def save_answer():
-    attempt_id = request.form.get("attempt_id")
-    question_id = request.form.get("question_id")
-    selected_option = request.form.get("selected_option")
+    attempt_id = request.form.get("attempt_id", type=int)
+    question_id = request.form.get("question_id", type=int)
+    selected_option = request.form.get("selected_option", type=int)
+
+    if not all([attempt_id, question_id, selected_option]):
+        return {"status": "error", "message": "Invalid data"}, 400
 
     attempt = QuizAttempt.query.get_or_404(attempt_id)
 
@@ -422,12 +423,12 @@ def save_answer():
     ).first()
 
     if answer:
-        answer.selected_option = int(selected_option)
+        answer.selected_option = selected_option
     else:
         answer = UserAnswer(
             attempt_id=attempt_id,
             question_id=question_id,
-            selected_option=int(selected_option)
+            selected_option=selected_option
         )
         db.session.add(answer)
 
@@ -440,7 +441,7 @@ def save_answer():
 @app.route("/quiz/submit/<int:attempt_id>", methods=["POST"])
 @login_required
 @role_required("user")
-def submit_quiz(attempt_id):
+def submit_quiz_final(attempt_id):
     attempt = QuizAttempt.query.get_or_404(attempt_id)
 
     # Prevent double submission
@@ -448,22 +449,22 @@ def submit_quiz(attempt_id):
         flash("Quiz already submitted")
         return redirect(url_for("user_dashboard"))
 
-    answers = UserAnswer.query.filter_by(attempt_id=attempt_id).all()
-    questions = Question.query.filter_by(quiz_id=attempt.quiz_id).all()
+    # Fetch all answers by user
+    answers = UserAnswer.query.filter_by(
+        attempt_id=attempt_id
+    ).all()
 
     score = 0
-    for ans in answers:
-        q = next((x for x in questions if x.question_id == ans.question_id), None)
-        if q and ans.selected_option == q.correct_option:
-            ans.is_correct = True
-            score += 1
-        else:
-            ans.is_correct = False
 
+    for answer in answers:
+        question = Question.query.get(answer.question_id)
+        if question and answer.selected_option == question.correct_option:
+            score += 1
+
+    # Save result
     attempt.score = score
-    attempt.total_questions = len(questions)
     attempt.submitted = True
-    attempt.end_time = datetime.utcnow()
+    attempt.submitted_at = datetime.utcnow()
 
     db.session.commit()
 
@@ -483,9 +484,16 @@ def quiz_result(attempt_id):
         flash("Quiz not submitted yet")
         return redirect(url_for("user_dashboard"))
 
+    quiz = Quiz.query.get(attempt.quiz_id)
+    total_questions = Question.query.filter_by(
+        quiz_id=attempt.quiz_id
+    ).count()
+
     return render_template(
         "user/results.html",
-        attempt=attempt
+        attempt=attempt,
+        quiz=quiz,
+        total_questions=total_questions
     )
 
 # ============================================================
@@ -627,18 +635,24 @@ def teacher_quizzes(chapter_id):
         quizzes=Quiz.query.filter_by(chapter_id=chapter_id).all()
     )
 
-
 @app.route("/teacher/quizzes/new", methods=["POST"])
 @login_required
 @role_required("teacher")
 def create_quiz():
+
+    # 🔑 FIX: convert string → datetime
+    raw_date = request.form["scheduled_date"]
+    scheduled_date = datetime.strptime(raw_date, "%Y-%m-%dT%H:%M")
+
     q = Quiz(
-        chapter_id=request.form["chapter_id"],
-        scheduled_date=request.form["scheduled_date"],
-        duration=request.form["duration"]
+        chapter_id=int(request.form["chapter_id"]),
+        scheduled_date=scheduled_date,
+        duration=int(request.form["duration"])
     )
+
     db.session.add(q)
     db.session.commit()
+
     return redirect(url_for("teacher_quizzes", chapter_id=q.chapter_id))
 
 
@@ -795,6 +809,25 @@ def teacher_result_detail(attempt_id):
         answers=answers
     )
 
+# ============================================================
+# TEACHER SUMMARY
+# ============================================================
+@app.route("/teacher/summary")
+@login_required
+@role_required("teacher")
+def teacher_summary():
+    return render_template("teacher/summary.html")
+
+
+# ============================================================
+# USER sUMMARY
+# ============================================================
+@app.route("/user/summary")
+@login_required
+@role_required("user")
+def user_summary():
+    return render_template("user/summary.html")
+
 
 # ============================================================
 # USER PROFILE
@@ -826,6 +859,13 @@ def upload_profile_image():
     user.profile_image = "/" + path
     db.session.commit()
     return redirect(url_for("user_profile"))
+
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    return send_from_directory("uploads", filename)
+
 
 # ============================================================
 # LOGOUT

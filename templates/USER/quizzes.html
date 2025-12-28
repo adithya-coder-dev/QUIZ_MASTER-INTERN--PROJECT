@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quizzes | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+    --success:#238636;
+    --danger:#8b949e;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:18px;
+    align-items:center;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* DROPDOWN */
+.dropdown{position:relative;}
+.dropdown-menu{
+    position:absolute;
+    right:0;
+    top:120%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    display:none;
+    min-width:160px;
+}
+.dropdown-menu a{
+    display:block;
+    padding:10px 14px;
+    font-size:14px;
+    color:var(--text);
+    text-decoration:none;
+}
+.dropdown-menu a:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* CONTENT */
+.container{padding:30px;}
+
+.quiz-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:18px;
+}
+
+.quiz-card h3{
+    color:var(--white);
+    margin-bottom:6px;
+}
+
+.quiz-meta{
+    font-size:13px;
+    color:#8b949e;
+    margin-bottom:14px;
+}
+
+.actions{
+    display:flex;
+    justify-content:flex-end;
+}
+
+.btn{
+    padding:8px 16px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    border:none;
+    cursor:pointer;
+}
+
+.btn-start{
+    background:var(--success);
+    color:#fff;
+}
+
+.btn-disabled{
+    background:var(--danger);
+    color:#000;
+    cursor:not-allowed;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('user_quizzes') }}">Scores</a>
+        <a class="nav-link" href="#">Summary</a>
+
+        <div class="dropdown">
+            <a class="nav-link" href="#" onclick="toggleMenu()">Profile ⌄</a>
+            <div class="dropdown-menu" id="profileMenu">
+                <a href="{{ url_for('user_profile') }}">View Profile</a>
+                <a href="{{ url_for('user_profile') }}">Upload Image</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+    <h1 style="color:var(--white);">Upcoming Quizzes</h1>
+    <p style="margin:8px 0 22px;">Attempt available quizzes before they expire.</p>
+
+    {% if quizzes %}
+        {% for quiz in quizzes %}
+        <div class="quiz-card">
+            <h3>Quiz #{{ quiz.quiz_id }}</h3>
+            <div class="quiz-meta">
+                Scheduled: {{ quiz.scheduled_date }} |
+                Duration: {{ quiz.duration }} mins
+            </div>
+
+            <div class="actions">
+                {% if has_attempted(session.user_id, quiz.quiz_id) %}
+                    <button class="btn btn-disabled" disabled>Already Attempted</button>
+                {% else %}
+                    <a href="{{ url_for('start_quiz', quiz_id=quiz.quiz_id) }}">
+                        <button class="btn btn-start">Start Quiz</button>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No quizzes available right now.</p>
+    {% endif %}
+</div>
+
+<script>
+function toggleMenu(){
+    const menu=document.getElementById("profileMenu");
+    menu.style.display = menu.style.display==="block" ? "none" : "block";
+}
+
+document.addEventListener("click",e=>{
+    const menu=document.getElementById("profileMenu");
+    if(menu && !e.target.closest(".dropdown")){
+        menu.style.display="none";
+    }
+});
+</script>
+
+</body>
+</html>

@@ -16,9 +16,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
 
     full_name = db.Column(db.String(120), nullable=False)
-    qualification = db.Column(db.String(120))
-    date_of_birth = db.Column(db.Date)
-
+   
     profile_image = db.Column(db.String(255))
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
 

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Results | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:18px;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* CONTENT */
+.container{
+    max-width:1100px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+h1{
+    color:var(--white);
+    margin-bottom:20px;
+}
+
+/* TABLE */
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+}
+
+thead{
+    background:#0d1117;
+}
+
+th, td{
+    padding:12px 14px;
+    text-align:left;
+    border-bottom:1px solid var(--border);
+    font-size:14px;
+}
+
+th{
+    color:var(--white);
+}
+
+tbody tr:hover{
+    background:#0d1117;
+}
+
+.view-link{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:600;
+}
+
+.view-link:hover{
+    text-decoration:underline;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Subjects</a>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+
+    <h1>All Quiz Results</h1>
+
+    {% if attempts %}
+    <table>
+        <thead>
+            <tr>
+                <th>Attempt ID</th>
+                <th>Student</th>
+                <th>Quiz ID</th>
+                <th>Score</th>
+                <th>Submitted At</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in attempts %}
+            <tr>
+                <td>{{ a.attempt_id }}</td>
+                <td>{{ a.user.username }}</td>
+                <td>{{ a.quiz.quiz_id }}</td>
+                <td>{{ a.score }}</td>
+                <td>{{ a.submitted_at }}</td>
+                <td>
+                    <a class="view-link"
+                       href="{{ url_for('teacher_result_detail', attempt_id=a.attempt_id) }}">
+                        View Details
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No results available.</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

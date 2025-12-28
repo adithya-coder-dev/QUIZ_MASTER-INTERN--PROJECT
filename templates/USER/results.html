@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quiz Result | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+    --success:#238636;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:18px;
+    align-items:center;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* CONTENT */
+.container{
+    max-width:700px;
+    margin:40px auto;
+    padding:20px;
+}
+
+.result-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:30px;
+    text-align:center;
+}
+
+.score{
+    font-size:48px;
+    color:var(--success);
+    font-weight:700;
+    margin:20px 0;
+}
+
+.meta{
+    font-size:14px;
+    color:#8b949e;
+    margin-bottom:20px;
+}
+
+.actions{
+    margin-top:30px;
+}
+
+.actions a{
+    margin:0 10px;
+    padding:10px 20px;
+    background:var(--accent);
+    color:#000;
+    border-radius:8px;
+    text-decoration:none;
+    font-weight:600;
+    font-size:14px;
+}
+
+.actions a:hover{
+    opacity:0.9;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('user_quizzes') }}">Scores</a>
+        <a class="nav-link" href="#">Summary</a>
+
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+
+    <div class="result-card">
+        <h1 style="color:var(--white);">Quiz Completed 🎉</h1>
+
+        <div class="score">
+            {{ attempt.score }} / {{ total_questions }}
+        </div>
+
+        <div class="meta">
+            Quiz ID: {{ quiz.quiz_id }} <br>
+            Attempted On: {{ attempt.submitted_at }}
+        </div>
+
+        <div class="actions">
+            <a href="{{ url_for('quiz_review', attempt_id=attempt.attempt_id) }}">
+                Review Answers
+            </a>
+            <a href="{{ url_for('user_dashboard') }}">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

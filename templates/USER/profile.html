@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Profile | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:18px;
+    align-items:center;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* CONTENT */
+.container{
+    max-width:800px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.profile-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:26px;
+}
+
+.profile-header{
+    display:flex;
+    gap:24px;
+    align-items:center;
+    margin-bottom:26px;
+}
+
+.avatar{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    object-fit:cover;
+    border:2px solid var(--border);
+    background:#0d1117;
+}
+
+.info h2{
+    color:var(--white);
+    margin-bottom:6px;
+}
+
+.info p{
+    font-size:14px;
+    color:#8b949e;
+}
+
+/* FORM */
+.form-group{
+    margin-bottom:18px;
+}
+
+.form-group label{
+    display:block;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.form-group input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:6px;
+    border:1px solid var(--border);
+    background:#0d1117;
+    color:var(--white);
+}
+
+.upload-box{
+    margin-top:20px;
+}
+
+.upload-box button{
+    padding:10px 20px;
+    background:var(--accent);
+    color:#000;
+    border:none;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('user_quizzes') }}">Scores</a>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+
+    <div class="profile-card">
+
+        <div class="profile-header">
+            {% if user.profile_image %}
+                <img src="{{ user.profile_image }}" class="avatar">
+            {% else %}
+                <img src="https://via.placeholder.com/120" class="avatar">
+            {% endif %}
+
+            <div class="info">
+                <h2>{{ user.full_name }}</h2>
+                <p>@{{ user.username }}</p>
+                <p>{{ user.email }}</p>
+            </div>
+        </div>
+
+        <!-- READ-ONLY INFO -->
+        <div class="form-group">
+            <label>Qualification</label>
+            <input type="text" value="{{ user.qualification }}" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="text" value="{{ user.date_of_birth }}" readonly>
+        </div>
+
+        <!-- UPLOAD IMAGE -->
+        <form class="upload-box" method="POST"
+              action="{{ url_for('upload_profile_image') }}"
+              enctype="multipart/form-data">
+
+            <label style="font-size:13px;margin-bottom:6px;display:block;">
+                Upload Profile Image
+            </label>
+            <input type="file" name="profile_image" accept="image/*" required>
+
+            <div style="margin-top:12px;">
+                <button type="submit">Upload</button>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

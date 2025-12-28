@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Summary | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;}
+body{background:var(--bg);color:var(--text);min-height:100vh;}
+
+.navbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 28px;background:var(--panel);border-bottom:1px solid var(--border);
+}
+
+.brand{color:var(--white);font-size:18px;font-weight:600;}
+.nav-links{display:flex;gap:18px;}
+.nav-link{color:var(--text);text-decoration:none;font-size:14px;padding:6px 10px;border-radius:6px;}
+.nav-link:hover{background:var(--border);color:var(--white);}
+
+.container{max-width:1100px;margin:30px auto;padding:0 20px;}
+h1{color:var(--white);margin-bottom:20px;}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px;
+}
+
+.card h3{color:var(--white);margin-bottom:10px;}
+.card p{font-size:14px;color:#8b949e;margin-bottom:16px;}
+
+.card a{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:600;
+    font-size:14px;
+}
+.card a:hover{text-decoration:underline;}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Quizzes</a>
+        <a class="nav-link" href="{{ url_for('teacher_results') }}">Results</a>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Summary</h1>
+
+    <div class="cards">
+
+        <div class="card">
+            <h3>Manage Content</h3>
+            <p>Create and manage subjects, chapters, quizzes, and questions.</p>
+            <a href="{{ url_for('teacher_subjects') }}">Go to Subjects →</a>
+        </div>
+
+        <div class="card">
+            <h3>Quiz Analytics</h3>
+            <p>View performance, attempts, and average scores.</p>
+            <a href="{{ url_for('teacher_results') }}">View Results →</a>
+        </div>
+
+        <div class="card">
+            <h3>Student Performance</h3>
+            <p>Review individual student answers and detailed results.</p>
+            <a href="{{ url_for('teacher_results') }}">Review Attempts →</a>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Take Quiz | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --success:#238636;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+}
+
+/* NAVBAR */
+.navbar{
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    color:var(--white);
+    font-weight:600;
+    font-size:18px;
+}
+
+/* CONTENT */
+.container{
+    max-width:900px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.timer{
+    font-size:14px;
+    background:#0b3d91;
+    padding:6px 12px;
+    border-radius:6px;
+    color:#fff;
+}
+
+.question-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:18px;
+}
+
+.question-card h3{
+    color:var(--white);
+    margin-bottom:10px;
+}
+
+.options label{
+    display:block;
+    margin:8px 0;
+    cursor:pointer;
+}
+
+.submit-box{
+    text-align:right;
+    margin-top:30px;
+}
+
+.submit-box button{
+    padding:12px 26px;
+    font-size:15px;
+    font-weight:600;
+    border:none;
+    border-radius:8px;
+    background:var(--success);
+    color:#fff;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+</nav>
+
+<div class="container">
+
+    <div class="header">
+        <h2 style="color:var(--white);">Quiz</h2>
+        <div class="timer" id="timer">Loading...</div>
+    </div>
+
+    <!-- SAFE DATA -->
+    <input type="hidden" id="attemptId" value="{{ attempt.attempt_id }}">
+    <input type="hidden" id="quizDuration" value="{{ quiz.duration }}">
+
+    <form method="POST" action="{{ url_for('submit_quiz_final', attempt_id=attempt.attempt_id) }}">
+
+        {% for q in questions %}
+        <div class="question-card">
+            <h3>Q{{ loop.index }}. {{ q.title }}</h3>
+            <p>{{ q.statement }}</p>
+
+            <div class="options">
+                <label>
+                    <input type="radio"
+                           name="question_{{ q.question_id }}"
+                           value="1"
+                           data-question="{{ q.question_id }}">
+                    {{ q.option_1 }}
+                </label>
+
+                <label>
+                    <input type="radio"
+                           name="question_{{ q.question_id }}"
+                           value="2"
+                           data-question="{{ q.question_id }}">
+                    {{ q.option_2 }}
+                </label>
+
+                <label>
+                    <input type="radio"
+                           name="question_{{ q.question_id }}"
+                           value="3"
+                           data-question="{{ q.question_id }}">
+                    {{ q.option_3 }}
+                </label>
+
+                <label>
+                    <input type="radio"
+                           name="question_{{ q.question_id }}"
+                           value="4"
+                           data-question="{{ q.question_id }}">
+                    {{ q.option_4 }}
+                </label>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="submit-box">
+            <button type="submit">Submit Quiz</button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+/* SAFE VARIABLES */
+const attemptId = document.getElementById("attemptId").value;
+const quizDurationSeconds =
+    parseInt(document.getElementById("quizDuration").value) * 60;
+
+let timeLeft = quizDurationSeconds;
+
+/* TIMER */
+function updateTimer(){
+    const min = Math.floor(timeLeft / 60);
+    const sec = timeLeft % 60;
+    document.getElementById("timer").innerText =
+        "Time Left: " + min + ":" + (sec < 10 ? "0" + sec : sec);
+
+    if(timeLeft <= 0){
+        alert("Time up! Quiz will be submitted.");
+        document.forms[0].submit();
+    }
+    timeLeft--;
+}
+setInterval(updateTimer, 1000);
+updateTimer();
+
+/* AUTO SAVE — NO INLINE JS */
+document.querySelectorAll("input[type=radio]").forEach(radio=>{
+    radio.addEventListener("change",()=>{
+        fetch("{{ url_for('save_answer') }}",{
+            method:"POST",
+            headers:{ "Content-Type":"application/x-www-form-urlencoded" },
+            body:
+                "attempt_id=" + attemptId +
+                "&question_id=" + radio.dataset.question +
+                "&selected_option=" + radio.value
+        });
+    });
+});
+</script>
+
+</body>
+</html>

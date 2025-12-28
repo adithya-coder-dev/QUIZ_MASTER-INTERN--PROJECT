@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:18px;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+/* CONTENT */
+.container{
+    padding:30px;
+}
+
+.card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+    margin-top:22px;
+}
+
+.card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:22px;
+}
+
+.card h3{
+    color:var(--white);
+    margin-bottom:10px;
+}
+
+.card p{
+    font-size:14px;
+    margin-bottom:16px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="container">
+    <h1 style="color:var(--white);">Admin Dashboard</h1>
+    <p style="margin-top:6px;">System overview and administration access.</p>
+
+    <div class="card-grid">
+
+        <div class="card">
+            <h3>System Status</h3>
+            <p>Application is running normally.</p>
+        </div>
+
+        <div class="card">
+            <h3>Roles & Access</h3>
+            <p>Admin, Teacher, and User roles are active.</p>
+        </div>
+
+        <div class="card">
+            <h3>Security</h3>
+            <p>Authentication and role-based access enforced.</p>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
