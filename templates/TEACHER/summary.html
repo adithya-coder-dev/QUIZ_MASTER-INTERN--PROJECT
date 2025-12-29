@@ -2,97 +2,279 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Summary | Quiz Master</title>
+<title>Teacher Summary | Quiz Master</title>
 
 <style>
 :root{
     --bg:#0d1117;
     --panel:#161b22;
+    --panel-soft:#1f2630;
     --border:#30363d;
     --text:#c9d1d9;
+    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
+    --green:#2ea043;
+    --red:#da3633;
+    --radius:14px;
 }
 
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;}
 body{background:var(--bg);color:var(--text);min-height:100vh;}
 
-.navbar{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:14px 28px;background:var(--panel);border-bottom:1px solid var(--border);
+.container{max-width:1200px;margin:30px auto;padding:0 20px;}
+h1,h2{color:var(--white);margin-bottom:16px}
+
+/* FILTER */
+select{
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel-soft);
+    color:var(--white);
 }
 
-.brand{color:var(--white);font-size:18px;font-weight:600;}
-.nav-links{display:flex;gap:18px;}
-.nav-link{color:var(--text);text-decoration:none;font-size:14px;padding:6px 10px;border-radius:6px;}
-.nav-link:hover{background:var(--border);color:var(--white);}
-
-.container{max-width:1100px;margin:30px auto;padding:0 20px;}
-h1{color:var(--white);margin-bottom:20px;}
-
-.cards{
+/* SUMMARY CARDS */
+.summary-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    gap:20px;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+    margin:20px 0;
 }
-
-.card{
+.summary-card{
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:14px;
-    padding:24px;
+    border-radius:var(--radius);
+    padding:18px;
 }
+.summary-card h3{font-size:14px;color:var(--muted)}
+.summary-card p{font-size:26px;font-weight:700;color:var(--white)}
 
-.card h3{color:var(--white);margin-bottom:10px;}
-.card p{font-size:14px;color:#8b949e;margin-bottom:16px;}
+/* BAR CHART */
+.chart{
+    display:flex;
+    gap:20px;
+    align-items:flex-end;
+    height:180px;
+    margin:20px 0 30px;
+}
+.bar{
+    flex:1;
+    background:var(--panel-soft);
+    border-radius:8px;
+    position:relative;
+}
+.bar span{
+    position:absolute;
+    bottom:100%;
+    left:50%;
+    transform:translateX(-50%);
+    margin-bottom:6px;
+    font-size:12px;
+}
+.bar-fill{
+    width:100%;
+    border-radius:8px;
+}
+.avg{background:var(--accent)}
+.max{background:#3fb950}
+.min{background:#f85149}
 
-.card a{
-    color:var(--accent);
-    text-decoration:none;
-    font-weight:600;
+/* TABLE */
+.table-wrap{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+}
+table{width:100%;border-collapse:collapse}
+th,td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
     font-size:14px;
 }
-.card a:hover{text-decoration:underline;}
+th{background:var(--panel-soft);color:var(--white)}
+tr:hover{background:rgba(255,255,255,.03)}
+
+.pass{color:#3fb950;font-weight:600}
+.fail{color:#f85149;font-weight:600}
+
+.rank{font-weight:700}
+.gold{color:#f9c513}
+.silver{color:#c9d1d9}
+.bronze{color:#cd7f32}
+
+button{
+    padding:6px 10px;
+    border-radius:6px;
+    border:none;
+    font-size:12px;
+    cursor:pointer;
+    background:var(--accent);
+}
+
+/* MODAL */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+.modal.active{display:flex}
+.modal-box{
+    width:420px;
+    background:var(--panel);
+    border-radius:16px;
+    padding:22px;
+}
+.modal-box h3{color:var(--white);margin-bottom:10px}
+.modal-box p{margin-bottom:6px}
 </style>
 </head>
 
 <body>
 
-<nav class="navbar">
-    <div class="brand">Quiz Master</div>
-    <div class="nav-links">
-        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
-        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Quizzes</a>
-        <a class="nav-link" href="{{ url_for('teacher_results') }}">Results</a>
-        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-    </div>
-</nav>
-
 <div class="container">
-    <h1>Summary</h1>
 
-    <div class="cards">
+<h1>📊 Teacher Summary</h1>
 
-        <div class="card">
-            <h3>Manage Content</h3>
-            <p>Create and manage subjects, chapters, quizzes, and questions.</p>
-            <a href="{{ url_for('teacher_subjects') }}">Go to Subjects →</a>
-        </div>
+<select id="quizSelect" onchange="updateView()">
+    {% for q in quizzes %}
+    <option value="{{ q.quiz_id }}">{{ q.title }}</option>
+    {% endfor %}
+</select>
 
-        <div class="card">
-            <h3>Quiz Analytics</h3>
-            <p>View performance, attempts, and average scores.</p>
-            <a href="{{ url_for('teacher_results') }}">View Results →</a>
-        </div>
+<!-- ANALYTICS -->
+<div class="summary-grid">
+    <div class="summary-card"><h3>Attempts</h3><p id="a1">–</p></div>
+    <div class="summary-card"><h3>Average</h3><p id="a2">–</p></div>
+    <div class="summary-card"><h3>Highest</h3><p id="a3">–</p></div>
+    <div class="summary-card"><h3>Lowest</h3><p id="a4">–</p></div>
+</div>
 
-        <div class="card">
-            <h3>Student Performance</h3>
-            <p>Review individual student answers and detailed results.</p>
-            <a href="{{ url_for('teacher_results') }}">Review Attempts →</a>
-        </div>
+<!-- BAR CHART -->
+<div class="chart">
+    <div class="bar"><span>Avg</span><div class="bar-fill avg" id="cAvg"></div></div>
+    <div class="bar"><span>Max</span><div class="bar-fill max" id="cMax"></div></div>
+    <div class="bar"><span>Min</span><div class="bar-fill min" id="cMin"></div></div>
+</div>
 
+<h2>🏆 Student Performance</h2>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+    <th>Rank</th>
+    <th>Student</th>
+    <th>Score</th>
+    <th>%</th>
+    <th>Status</th>
+    <th>Action</th>
+</tr>
+</thead>
+<tbody id="studentTable">
+{% for r in student_results %}
+<tr data-quiz="{{ r.quiz_id }}"
+    data-name="{{ r.student_name }}"
+    data-score="{{ r.score }}"
+    data-total="{{ r.total }}"
+    data-percent="{{ r.percent }}"
+    data-date="{{ r.attempted_on }}">
+    <td class="rank"></td>
+    <td>{{ r.student_name }}</td>
+    <td>{{ r.score }}/{{ r.total }}</td>
+    <td>{{ r.percent }}%</td>
+    <td class="{{ 'pass' if r.percent>=40 else 'fail' }}">
+        {{ 'Pass' if r.percent>=40 else 'Fail' }}
+    </td>
+    <td><button onclick="viewStudent(this)">View</button></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+</div>
+
+<!-- STUDENT MODAL -->
+<div class="modal" id="studentModal">
+    <div class="modal-box">
+        <h3 id="mName"></h3>
+        <p id="mScore"></p>
+        <p id="mPercent"></p>
+        <p id="mStatus"></p>
+        <p id="mDate"></p>
+        <button onclick="closeModal()">Close</button>
     </div>
 </div>
+
+<!-- ✅ SAFE JSON (NO JINJA IN JS) -->
+<script type="application/json" id="analytics-data">
+{{ analytics | tojson | safe }}
+</script>
+
+<script>
+const quizAnalytics = JSON.parse(
+    document.getElementById("analytics-data").textContent
+);
+
+function updateView(){
+    const qid = document.getElementById('quizSelect').value;
+    const a = quizAnalytics[qid];
+    if(!a) return;
+
+    document.getElementById('a1').innerText = a.attempts;
+    document.getElementById('a2').innerText = a.avg + "%";
+    document.getElementById('a3').innerText = a.max + "%";
+    document.getElementById('a4').innerText = a.min + "%";
+
+    document.getElementById('cAvg').style.height = a.avg + "%";
+    document.getElementById('cMax').style.height = a.max + "%";
+    document.getElementById('cMin').style.height = a.min + "%";
+
+    const rows = Array.from(document.querySelectorAll('#studentTable tr'))
+        .filter(r => r.dataset.quiz === qid)
+        .sort((x,y)=>Number(y.dataset.percent)-Number(x.dataset.percent));
+
+    rows.forEach((r,i)=>{
+        r.style.display='';
+        const rank=i+1;
+        const cell=r.querySelector('.rank');
+        cell.innerText=rank;
+        cell.className =
+            rank===1?'rank gold':
+            rank===2?'rank silver':
+            rank===3?'rank bronze':'rank';
+    });
+
+    document.querySelectorAll('#studentTable tr').forEach(r=>{
+        if(r.dataset.quiz!==qid) r.style.display='none';
+    });
+}
+
+function viewStudent(btn){
+    const r = btn.closest('tr');
+    document.getElementById('mName').innerText = r.dataset.name;
+    document.getElementById('mScore').innerText =
+        `Score: ${r.dataset.score}/${r.dataset.total}`;
+    document.getElementById('mPercent').innerText =
+        `Percentage: ${r.dataset.percent}%`;
+    document.getElementById('mStatus').innerText =
+        Number(r.dataset.percent)>=40?'Status: Pass':'Status: Fail';
+    document.getElementById('mDate').innerText =
+        `Attempted on: ${r.dataset.date}`;
+    document.getElementById('studentModal').classList.add('active');
+}
+
+function closeModal(){
+    document.getElementById('studentModal').classList.remove('active');
+}
+
+updateView();
+</script>
 
 </body>
 </html>

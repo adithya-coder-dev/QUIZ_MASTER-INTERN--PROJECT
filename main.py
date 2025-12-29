@@ -17,7 +17,7 @@ from controller.models import (
     Subject, Chapter, Quiz, Question,
     QuizAttempt, UserAnswer
 )
-
+from sqlalchemy.orm import joinedload
 # ============================================================
 # APP SETUP
 # ============================================================
@@ -244,12 +244,22 @@ def user_dashboard():
         has_attempted=has_attempted
     )
 
+
 @app.route("/teacher/dashboard")
 @login_required
 @role_required("teacher")
 def teacher_dashboard():
-    return render_template("teacher/dashboard.html")
+    quizzes = Quiz.query.options(
+        joinedload(Quiz.chapter).joinedload(Chapter.subject)
+    ).all()
 
+    return render_template(
+        "teacher/dashboard.html",
+        quizzes=quizzes,
+        total_subjects=Subject.query.count(),
+        total_chapters=Chapter.query.count(),
+        total_quizzes=Quiz.query.count()
+    )
 
 @app.route("/admin/dashboard")
 @login_required
@@ -629,10 +639,15 @@ def delete_chapter(chapter_id):
 @login_required
 @role_required("teacher")
 def teacher_quizzes(chapter_id):
+    chapter = Chapter.query.get_or_404(chapter_id)
+    subject = Subject.query.get_or_404(chapter.subject_id)
+    quizzes = Quiz.query.filter_by(chapter_id=chapter_id).all()
+
     return render_template(
         "teacher/quizzes.html",
-        chapter=Chapter.query.get_or_404(chapter_id),
-        quizzes=Quiz.query.filter_by(chapter_id=chapter_id).all()
+        chapter=chapter,
+        subject=subject,   # ✅ THIS FIXES THE ERROR
+        quizzes=quizzes
     )
 
 @app.route("/teacher/quizzes/new", methods=["POST"])
@@ -685,14 +700,21 @@ def delete_quiz(quiz_id):
 @login_required
 @role_required("teacher")
 def teacher_questions(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    chapter = Chapter.query.get_or_404(quiz.chapter_id)
+    subject = Subject.query.get_or_404(chapter.subject_id)
+
+    questions = Question.query.filter_by(quiz_id=quiz_id).all()
+
     return render_template(
         "teacher/questions.html",
-        quiz=Quiz.query.get_or_404(quiz_id),
-        questions=Question.query.filter_by(quiz_id=quiz_id).all()
+        quiz=quiz,
+        chapter=chapter,
+        subject=subject,     # ✅ THIS WAS MISSING
+        questions=questions
     )
 
-
-@app.route("/teacher/questions/new", methods=["POST"])
+@app.route("/teacher/questions/create", methods=["POST"])
 @login_required
 @role_required("teacher")
 def create_question():
@@ -704,11 +726,26 @@ def create_question():
         option_2=request.form["option_2"],
         option_3=request.form["option_3"],
         option_4=request.form["option_4"],
-        correct_option=request.form["correct_option"]
+        correct_option=int(request.form["correct_option"])
     )
+
     db.session.add(q)
     db.session.commit()
-    return redirect(url_for("teacher_questions", quiz_id=q.quiz_id))
+
+    # 🔹 Add another question (keep modal open)
+    if request.form.get("add_more") == "1":
+        return redirect(url_for(
+            "teacher_questions",
+            quiz_id=request.form["quiz_id"],
+            add_more=1
+        ))
+
+    # 🔹 Normal save
+    return redirect(url_for(
+        "teacher_questions",
+        quiz_id=request.form["quiz_id"]
+    ))
+
 
 
 @app.route("/teacher/questions/<int:question_id>/edit", methods=["POST"])
@@ -784,6 +821,23 @@ def teacher_results():
     return render_template(
         "teacher/results.html",
         attempts=attempts
+    )
+
+# ============================================================ #
+#Teacher – View All Quiz 
+# ============================================================ #
+@app.route("/teacher/quizzes/all")
+@login_required
+@role_required("teacher")
+def teacher_all_quizzes():
+    return render_template(
+        "teacher_all_quizzes.html",
+        quizzes=Quiz.query.all(),
+        subjects=Subject.query.all(),
+        chapters=Chapter.query.all(),
+        total_subjects=Subject.query.count(),
+        total_chapters=Chapter.query.count(),
+        total_quizzes=Quiz.query.count()
     )
 # ============================================================ #
 #=============================================================#

@@ -8,213 +8,293 @@
 :root{
     --bg:#0d1117;
     --panel:#161b22;
+    --panel-soft:#1f2630;
     --border:#30363d;
     --text:#c9d1d9;
+    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
-    --green:#238636;
+    --green:#2ea043;
     --red:#da3633;
+    --radius:14px;
 }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+[data-theme="light"]{
+    --bg:#f6f8fa;
+    --panel:#ffffff;
+    --panel-soft:#f1f3f5;
+    --border:#d0d7de;
+    --text:#24292f;
+    --muted:#57606a;
+    --white:#000;
 }
 
-body{
-    background:var(--bg);
-    color:var(--text);
-    min-height:100vh;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;}
+body{background:var(--bg);color:var(--text);min-height:100vh;}
 
 /* NAVBAR */
 .navbar{
+    position:sticky;
+    top:0;
+    z-index:10;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:14px 28px;
+    padding:14px 32px;
     background:var(--panel);
     border-bottom:1px solid var(--border);
 }
-
-.brand{
-    font-size:18px;
-    font-weight:600;
-    color:var(--white);
-}
-
-.nav-links{
-    display:flex;
-    gap:18px;
-}
-
+.brand{font-size:18px;font-weight:700;color:var(--white);}
+.nav-links{display:flex;gap:8px;align-items:center;}
 .nav-link{
+    padding:8px 14px;
+    border-radius:8px;
     color:var(--text);
     text-decoration:none;
     font-size:14px;
-    padding:6px 10px;
-    border-radius:6px;
 }
-
-.nav-link:hover{
-    background:var(--border);
+.nav-link.active,.nav-link:hover{
+    background:var(--panel-soft);
     color:var(--white);
 }
+.theme-toggle{cursor:pointer;padding:8px 10px;}
 
 /* CONTENT */
-.container{
-    max-width:1000px;
-    margin:30px auto;
-    padding:0 20px;
-}
-
+.container{max-width:1200px;margin:30px auto;padding:0 20px;}
 .header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:24px;
+}
+.header h1{color:var(--white);font-size:26px;}
+
+button{
+    padding:8px 16px;border:none;border-radius:10px;
+    font-weight:600;cursor:pointer;
+}
+.btn-primary{background:var(--green);color:#fff;}
+.btn-secondary{background:var(--accent);color:#000;}
+.btn-danger{background:var(--red);color:#fff;}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(360px,1fr));
+    gap:20px;
 }
 
 .card{
-    background:var(--panel);
+    background:linear-gradient(180deg,var(--panel),var(--panel-soft));
     border:1px solid var(--border);
-    border-radius:12px;
+    border-radius:var(--radius);
     padding:20px;
-    margin-bottom:18px;
 }
 
-.card h3{
-    color:var(--white);
-    margin-bottom:10px;
-}
-
-/* FORM */
-input, textarea, select{
-    width:100%;
-    padding:8px 10px;
-    border-radius:6px;
-    border:1px solid var(--border);
-    background:#0d1117;
-    color:var(--white);
+.q-badge{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    background:var(--accent);
+    color:#000;
+    font-size:12px;
+    font-weight:700;
     margin-bottom:8px;
 }
 
-textarea{ resize:vertical; }
+.card h3{color:var(--white);margin-bottom:6px;}
+.statement{font-size:14px;color:var(--muted);margin-bottom:10px;}
+.option{font-size:14px;color:var(--muted);margin-bottom:4px;}
+.correct{margin-top:8px;color:#3fb950;font-weight:600;}
+.actions{display:flex;gap:8px;margin-top:14px;}
 
-button{
-    padding:8px 14px;
-    border:none;
-    border-radius:6px;
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
+.empty{text-align:center;padding:80px;color:var(--muted);}
+
+/* MODAL */
+.modal{
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.65);
+    display:none;justify-content:center;align-items:center;
+    z-index:100;
 }
+.modal.active{display:flex;}
 
-.btn-add{ background:var(--green); color:#fff; }
-.btn-edit{ background:var(--accent); color:#000; }
-.btn-delete{ background:var(--red); color:#fff; }
-
-.actions{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
+.modal-box{
+    width:520px;background:var(--panel);
+    border-radius:18px;padding:26px;
+    max-height:90vh;overflow-y:auto;
 }
+.modal-box h3{color:var(--white);margin-bottom:16px;}
+
+.form-group{margin-bottom:12px;}
+.form-group label{
+    display:block;font-size:13px;
+    color:var(--muted);margin-bottom:4px;
+}
+input, textarea, select{
+    width:100%;padding:10px 12px;
+    border-radius:10px;border:1px solid var(--border);
+    background:var(--panel-soft);color:var(--white);
+}
+textarea{resize:vertical}
 </style>
 </head>
 
-<body>
+<body data-theme="dark">
 
-<!-- NAVBAR -->
+<!-- NAVBAR (MERGED) -->
 <nav class="navbar">
     <div class="brand">Quiz Master</div>
     <div class="nav-links">
         <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
         <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Subjects</a>
-        <a class="nav-link" href="{{ url_for('teacher_results') }}">Summary</a>
+        <a class="nav-link" href="{{ url_for('teacher_chapters', subject_id=subject.subject_id) }}">Chapters</a>
+        <a class="nav-link" href="{{ url_for('teacher_quizzes', chapter_id=chapter.chapter_id) }}">Quizzes</a>
+        <a class="nav-link active">Questions</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container">
 
     <div class="header">
-        <h1 style="color:var(--white);">
-            Questions — Quiz #{{ quiz.quiz_id }}
-        </h1>
-        <a href="{{ url_for('teacher_quizzes', chapter_id=quiz.chapter_id) }}"
-           class="nav-link">← Back</a>
+        <h1>Questions — {{ quiz.title }}</h1>
+        <button class="btn-primary" onclick="openModal()">➕ Add Question</button>
     </div>
 
-    <!-- ADD QUESTION -->
-    <div class="card">
-        <h3>Add New Question</h3>
-        <form method="POST" action="{{ url_for('create_question') }}">
-            <input type="hidden" name="quiz_id" value="{{ quiz.quiz_id }}">
+    {% if questions %}
+    <div class="grid">
+        {% for q in questions %}
+        <div class="card question-card"
+             data-title="{{ q.title }}"
+             data-statement="{{ q.statement }}"
+             data-o1="{{ q.option_1 }}"
+             data-o2="{{ q.option_2 }}"
+             data-o3="{{ q.option_3 }}"
+             data-o4="{{ q.option_4 }}"
+             data-correct="{{ q.correct_option }}"
+             data-edit-url="{{ url_for('edit_question', question_id=q.question_id) }}">
 
-            <input type="text" name="title" placeholder="Question title" required>
-            <textarea name="statement" placeholder="Question statement" required></textarea>
+            <div class="q-badge">Q{{ loop.index }}</div>
+            <h3>{{ q.title }}</h3>
 
-            <input type="text" name="option_1" placeholder="Option 1" required>
-            <input type="text" name="option_2" placeholder="Option 2" required>
-            <input type="text" name="option_3" placeholder="Option 3" required>
-            <input type="text" name="option_4" placeholder="Option 4" required>
+            <div class="statement">{{ q.statement }}</div>
+            <div class="option">1. {{ q.option_1 }}</div>
+            <div class="option">2. {{ q.option_2 }}</div>
+            <div class="option">3. {{ q.option_3 }}</div>
+            <div class="option">4. {{ q.option_4 }}</div>
 
-            <label>Correct Option</label>
-            <select name="correct_option" required>
-                <option value="1">Option 1</option>
-                <option value="2">Option 2</option>
-                <option value="3">Option 3</option>
-                <option value="4">Option 4</option>
-            </select>
-
-            <button class="btn-add" type="submit">Add Question</button>
-        </form>
-    </div>
-
-    <!-- QUESTION LIST -->
-    {% for q in questions %}
-    <div class="card">
-        <h3>{{ q.title }}</h3>
-        <p style="margin-bottom:10px;">{{ q.statement }}</p>
-
-        <!-- EDIT -->
-        <form method="POST" action="{{ url_for('edit_question', question_id=q.question_id) }}">
-
-            <input type="text" name="title" value="{{ q.title }}" required>
-            <textarea name="statement" required>{{ q.statement }}</textarea>
-
-            <input type="text" name="option_1" value="{{ q.option_1 }}" required>
-            <input type="text" name="option_2" value="{{ q.option_2 }}" required>
-            <input type="text" name="option_3" value="{{ q.option_3 }}" required>
-            <input type="text" name="option_4" value="{{ q.option_4 }}" required>
-
-            <label>Correct Option</label>
-            <select name="correct_option">
-                <option value="1" {% if q.correct_option == 1 %}selected{% endif %}>Option 1</option>
-                <option value="2" {% if q.correct_option == 2 %}selected{% endif %}>Option 2</option>
-                <option value="3" {% if q.correct_option == 3 %}selected{% endif %}>Option 3</option>
-                <option value="4" {% if q.correct_option == 4 %}selected{% endif %}>Option 4</option>
-            </select>
+            <div class="correct">✔ Correct Option: {{ q.correct_option }}</div>
 
             <div class="actions">
-                <button class="btn-edit" type="submit">Update</button>
+                <button class="btn-secondary" onclick="editQuestion(this)">Edit</button>
+                <form method="POST"
+                      action="{{ url_for('delete_question', question_id=q.question_id) }}"
+                      onsubmit="return handleDelete(this);">
+                    <button class="btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="empty">No questions yet.</div>
+    {% endif %}
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <h3 id="modalTitle">Add Question</h3>
+
+        <form method="POST" action="{{ url_for('create_question') }}" id="questionForm">
+            <input type="hidden" name="quiz_id" value="{{ quiz.quiz_id }}">
+
+            <div class="form-group">
+                <label>Title</label>
+                <input name="title" id="qTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label>Question Statement</label>
+                <textarea name="statement" id="qStatement" required></textarea>
+            </div>
+
+            <div class="form-group"><label>Option 1</label><input name="option_1" id="o1" required></div>
+            <div class="form-group"><label>Option 2</label><input name="option_2" id="o2" required></div>
+            <div class="form-group"><label>Option 3</label><input name="option_3" id="o3" required></div>
+            <div class="form-group"><label>Option 4</label><input name="option_4" id="o4" required></div>
+
+            <div class="form-group">
+                <label>Correct Option</label>
+                <select name="correct_option" id="correctOpt" required>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button class="btn-primary" type="submit">Save</button>
+                <button class="btn-secondary" type="button" onclick="saveAndNext()">Save & Next</button>
+                <button type="button" onclick="closeModal()">Cancel</button>
             </div>
         </form>
-
-        <!-- DELETE -->
-        <form method="POST"
-              action="{{ url_for('delete_question', question_id=q.question_id) }}"
-              onsubmit="return confirm('Delete this question?');"
-              style="margin-top:10px;">
-            <button class="btn-delete" type="submit">Delete</button>
-        </form>
     </div>
-    {% endfor %}
-
 </div>
+
+<script>
+let questionCount = document.querySelectorAll('.question-card').length;
+
+function openModal(){
+    document.getElementById('modal').classList.add('active');
+    document.getElementById('questionForm').reset();
+    questionCount += 1;
+    document.getElementById('qTitle').value = "Question " + questionCount;
+    document.getElementById('qStatement').focus();
+}
+function closeModal(){document.getElementById('modal').classList.remove('active');}
+
+function editQuestion(btn){
+    questionCount -= 1;
+    openModal();
+    const c = btn.closest('.question-card');
+    document.getElementById('modalTitle').innerText='Edit Question';
+    qTitle.value=c.dataset.title;
+    qStatement.value=c.dataset.statement;
+    o1.value=c.dataset.o1;o2.value=c.dataset.o2;o3.value=c.dataset.o3;o4.value=c.dataset.o4;
+    correctOpt.value=c.dataset.correct;
+    questionForm.action=c.dataset.editUrl;
+}
+
+function saveAndNext(){
+    fetch(questionForm.action,{method:'POST',body:new FormData(questionForm)})
+    .then(()=>{questionForm.reset();questionCount++;qTitle.value="Question "+questionCount;qStatement.focus();});
+}
+
+function handleDelete(form){
+    if(!confirm("Delete this question?"))return false;
+    fetch(form.action,{method:'POST'}).then(()=>{
+        form.closest('.question-card').remove();
+        document.querySelectorAll('.question-card').forEach((c,i)=>{
+            c.querySelector('.q-badge').innerText="Q"+(i+1);
+            c.querySelector('h3').innerText="Question "+(i+1);
+        });
+        questionCount=document.querySelectorAll('.question-card').length;
+    });
+    return false;
+}
+
+document.addEventListener('keydown',e=>{
+    if(!modal.classList.contains('active'))return;
+    if(e.key==="Enter"){e.preventDefault();saveAndNext();}
+    if(e.key==="Escape"){closeModal();}
+});
+
+function toggleTheme(){
+    document.body.dataset.theme =
+        document.body.dataset.theme==='dark'?'light':'dark';
+}
+</script>
 
 </body>
 </html>

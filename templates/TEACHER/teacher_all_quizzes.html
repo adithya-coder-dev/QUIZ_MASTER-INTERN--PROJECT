@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>All Quizzes | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --panel-soft:#1f2630;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --muted:#8b949e;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+    --green:#2ea043;
+    --radius:14px;
+}
+
+/* LIGHT THEME */
+body.light{
+    --bg:#f6f8fa;
+    --panel:#ffffff;
+    --panel-soft:#f0f2f5;
+    --border:#d0d7de;
+    --text:#24292f;
+    --muted:#57606a;
+    --white:#000000;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    position:sticky;
+    top:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 32px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:700;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:8px;
+    align-items:center;
+}
+
+.nav-link{
+    padding:8px 14px;
+    border-radius:8px;
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+}
+
+.nav-link:hover,
+.nav-link.active{
+    background:var(--panel-soft);
+    color:var(--white);
+}
+
+.theme-toggle{
+    cursor:pointer;
+    padding:8px 12px;
+    border-radius:8px;
+}
+
+.theme-toggle:hover{
+    background:var(--panel-soft);
+}
+
+/* CONTAINER */
+.container{
+    max-width:1200px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+/* STATS */
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
+    margin-bottom:26px;
+}
+
+.stat-card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-soft));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+}
+
+.stat-card h3{
+    color:var(--white);
+    font-size:22px;
+}
+
+.stat-card p{
+    color:var(--muted);
+    margin-top:4px;
+}
+
+/* FILTER BAR */
+.filters{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+select,input{
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:18px;
+}
+
+/* CARD */
+.card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-soft));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+}
+
+.card h3{
+    color:var(--white);
+    margin-bottom:6px;
+}
+
+.card p{
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:12px;
+}
+
+.badges{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.badge{
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:999px;
+    background:var(--panel-soft);
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
+        <a class="nav-link active">All Quizzes</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat-card">
+            <h3>{{ total_subjects }}</h3>
+            <p>Subjects</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ total_chapters }}</h3>
+            <p>Chapters</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ total_quizzes }}</h3>
+            <p>Quizzes</p>
+        </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+        <input type="text" placeholder="Search quiz…" onkeyup="filterQuizzes()">
+        <select id="subjectFilter" onchange="filterQuizzes()">
+            <option value="">All Subjects</option>
+            {% for s in subjects %}
+            <option value="{{ s.name }}">{{ s.name }}</option>
+            {% endfor %}
+        </select>
+
+        <select id="chapterFilter" onchange="filterQuizzes()">
+            <option value="">All Chapters</option>
+            {% for c in chapters %}
+            <option value="{{ c.name }}">{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- QUIZZES -->
+    <div class="grid" id="quizGrid">
+        {% for q in quizzes %}
+        <div class="card quiz-card"
+             data-title="{{ q.title|lower }}"
+             data-subject="{{ q.subject.name }}"
+             data-chapter="{{ q.chapter.name }}">
+            <h3>{{ q.title }}</h3>
+            <p>{{ q.description or "No description" }}</p>
+            <div class="badges">
+                <div class="badge">📘 {{ q.subject.name }}</div>
+                <div class="badge">📗 {{ q.chapter.name }}</div>
+                <div class="badge">⏱ {{ q.duration }} mins</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+/* SEARCH + FILTER */
+function filterQuizzes(){
+    const text = document.querySelector('input').value.toLowerCase();
+    const subj = document.getElementById('subjectFilter').value;
+    const chap = document.getElementById('chapterFilter').value;
+
+    document.querySelectorAll('.quiz-card').forEach(card=>{
+        const match =
+            card.dataset.title.includes(text) &&
+            (!subj || card.dataset.subject===subj) &&
+            (!chap || card.dataset.chapter===chap);
+
+        card.style.display = match ? 'block' : 'none';
+    });
+}
+
+/* THEME */
+function toggleTheme(){
+    document.body.classList.toggle('light');
+    localStorage.setItem('theme',
+        document.body.classList.contains('light') ? 'light':'dark'
+    );
+}
+
+if(localStorage.getItem('theme')==='light'){
+    document.body.classList.add('light');
+}
+</script>
+
+</body>
+</html>

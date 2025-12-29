@@ -8,10 +8,23 @@
 :root{
     --bg:#0d1117;
     --panel:#161b22;
+    --panel-soft:#1f2630;
     --border:#30363d;
     --text:#c9d1d9;
+    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
+}
+
+/* LIGHT THEME */
+body.light{
+    --bg:#f6f8fa;
+    --panel:#ffffff;
+    --panel-soft:#f0f2f5;
+    --border:#d0d7de;
+    --text:#24292f;
+    --muted:#57606a;
+    --white:#000000;
 }
 
 *{
@@ -46,6 +59,7 @@ body{
 .nav-links{
     display:flex;
     gap:18px;
+    align-items:center;
 }
 
 .nav-link{
@@ -61,11 +75,60 @@ body{
     color:var(--white);
 }
 
+/* THEME TOGGLE */
+.theme-toggle{
+    cursor:pointer;
+    padding:6px 10px;
+    border-radius:6px;
+}
+.theme-toggle:hover{
+    background:var(--border);
+}
+
 /* CONTENT */
 .container{
     padding:30px;
 }
 
+/* STATS */
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px;
+    margin:22px 0;
+}
+
+.stat{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px;
+}
+
+.stat h3{
+    color:var(--white);
+    font-size:22px;
+}
+
+.stat p{
+    color:var(--muted);
+}
+
+/* SEARCH */
+.search-box{
+    margin:24px 0 14px;
+}
+
+.search-box input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+}
+
+/* GRID */
 .card-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -88,17 +151,21 @@ body{
 .card p{
     font-size:14px;
     margin-bottom:16px;
+    color:var(--muted);
 }
 
-.card a{
-    color:var(--accent);
-    text-decoration:none;
-    font-size:14px;
-    font-weight:600;
+/* QUIZ BADGES */
+.badges{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
 }
 
-.card a:hover{
-    text-decoration:underline;
+.badge{
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:999px;
+    background:var(--panel-soft);
 }
 </style>
 </head>
@@ -112,6 +179,7 @@ body{
         <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
         <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Quizzes</a>
         <a class="nav-link" href="{{ url_for('teacher_summary') }}">Summary</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
@@ -121,8 +189,24 @@ body{
     <h1 style="color:var(--white);">Teacher Dashboard</h1>
     <p style="margin-top:6px;">Manage subjects, quizzes, and view student performance.</p>
 
-    <div class="card-grid">
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat">
+            <h3>{{ total_subjects }}</h3>
+            <p>Subjects</p>
+        </div>
+        <div class="stat">
+            <h3>{{ total_chapters }}</h3>
+            <p>Chapters</p>
+        </div>
+        <div class="stat">
+            <h3>{{ total_quizzes }}</h3>
+            <p>Quizzes</p>
+        </div>
+    </div>
 
+    <!-- ORIGINAL CARDS -->
+    <div class="card-grid">
         <div class="card">
             <h3>Manage Subjects</h3>
             <p>Create, edit, and delete subjects.</p>
@@ -135,7 +219,48 @@ body{
             <a href="{{ url_for('teacher_subjects') }}">Go to Quizzes →</a>
         </div>
     </div>
+
+    <!-- SEARCH -->
+    <div class="search-box">
+        <input type="text" placeholder="Search quizzes…" onkeyup="filterQuizzes(this.value)">
+    </div>
+
+    <!-- QUIZ LIST -->
+    <div class="card-grid">
+        {% for q in quizzes %}
+        <div class="card quiz-card" data-name="{{ q.title|lower }}">
+            <h3>{{ q.title }}</h3>
+            <p>{{ q.description or "No description" }}</p>
+            <div class="badges">
+                <span class="badge">📘 {{ q.chapter.subject.name }}</span>
+                <span class="badge">📗 {{ q.chapter.name }}</span>
+                <span class="badge">⏱ {{ q.duration }} mins</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+
+<script>
+function filterQuizzes(val){
+    document.querySelectorAll('.quiz-card').forEach(card=>{
+        card.style.display =
+            card.dataset.name.includes(val.toLowerCase()) ? 'block' : 'none';
+    });
+}
+
+function toggleTheme(){
+    document.body.classList.toggle('light');
+    localStorage.setItem(
+        'theme',
+        document.body.classList.contains('light') ? 'light' : 'dark'
+    );
+}
+
+if(localStorage.getItem('theme') === 'light'){
+    document.body.classList.add('light');
+}
+</script>
 
 </body>
 </html>

@@ -8,19 +8,22 @@
 :root{
     --bg:#0d1117;
     --panel:#161b22;
+    --panel-soft:#1f2630;
     --border:#30363d;
     --text:#c9d1d9;
+    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
-    --green:#238636;
+    --green:#2ea043;
     --red:#da3633;
+    --radius:14px;
 }
 
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
 }
 
 body{
@@ -31,41 +34,44 @@ body{
 
 /* NAVBAR */
 .navbar{
+    position:sticky;
+    top:0;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:14px 28px;
+    padding:14px 32px;
     background:var(--panel);
     border-bottom:1px solid var(--border);
 }
 
 .brand{
     font-size:18px;
-    font-weight:600;
+    font-weight:700;
     color:var(--white);
 }
 
 .nav-links{
     display:flex;
-    gap:18px;
+    gap:8px;
 }
 
 .nav-link{
+    padding:8px 14px;
+    border-radius:8px;
     color:var(--text);
     text-decoration:none;
     font-size:14px;
-    padding:6px 10px;
-    border-radius:6px;
 }
 
+.nav-link.active,
 .nav-link:hover{
-    background:var(--border);
+    background:var(--panel-soft);
     color:var(--white);
 }
 
 /* CONTENT */
 .container{
-    max-width:900px;
+    max-width:1100px;
     margin:30px auto;
     padding:0 20px;
 }
@@ -77,12 +83,39 @@ body{
     margin-bottom:20px;
 }
 
-.card{
-    background:var(--panel);
+.header h1{
+    color:var(--white);
+    font-size:26px;
+}
+
+.search-box{
+    display:flex;
+    gap:10px;
+}
+
+input, textarea{
+    padding:10px 12px;
+    border-radius:10px;
     border:1px solid var(--border);
-    border-radius:12px;
+    background:var(--panel);
+    color:var(--white);
+}
+
+textarea{ resize:vertical }
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:18px;
+}
+
+/* CARD */
+.card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-soft));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
     padding:20px;
-    margin-bottom:16px;
 }
 
 .card h3{
@@ -92,126 +125,250 @@ body{
 
 .card p{
     font-size:14px;
-    margin-bottom:10px;
+    color:var(--muted);
+    margin-bottom:12px;
 }
 
-/* FORMS */
-input, select{
-    width:100%;
-    padding:8px 10px;
-    border-radius:6px;
-    border:1px solid var(--border);
-    background:#0d1117;
-    color:var(--white);
-    margin-bottom:8px;
+/* BADGES */
+.badges{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:12px;
 }
 
+.badge{
+    padding:4px 10px;
+    font-size:12px;
+    border-radius:999px;
+    background:var(--panel-soft);
+}
+
+/* BUTTONS */
 button{
     padding:8px 14px;
     border:none;
-    border-radius:6px;
+    border-radius:8px;
     font-size:13px;
     font-weight:600;
     cursor:pointer;
 }
 
-.btn-add{ background:var(--green); color:#fff; }
-.btn-edit{ background:var(--accent); color:#000; }
-.btn-delete{ background:var(--red); color:#fff; }
+.btn-primary{ background:var(--green); color:#fff; }
+.btn-secondary{ background:var(--accent); color:#000; }
+.btn-danger{ background:var(--red); color:#fff; }
 
 .actions{
     display:flex;
-    gap:10px;
+    gap:8px;
     flex-wrap:wrap;
 }
+
+/* MODAL */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+
+.modal.active{
+    display:flex;
+}
+
+.modal-box{
+    width:460px;
+    background:var(--panel);
+    border-radius:16px;
+    padding:24px;
+}
+
+.modal-box h3{
+    color:var(--white);
+    margin-bottom:16px;
+}
+
+.form-group{
+    margin-bottom:12px;
+}
+
+.form-group label{
+    font-size:13px;
+    color:var(--muted);
+    display:block;
+    margin-bottom:4px;
+}
+
+.empty{
+    text-align:center;
+    padding:60px;
+    color:var(--muted);
+}
+.theme-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+    color:var(--text);
+}
+
+.theme-toggle:hover{
+    background:var(--panel-soft);
+    color:var(--white);
+}
+
 </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar">
     <div class="brand">Quiz Master</div>
     <div class="nav-links">
         <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
+
         <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Subjects</a>
-        <a class="nav-link" href="{{ url_for('teacher_results') }}">Summary</a>
+
+        <!-- ✅ ADDED CHAPTERS -->
+        <a class="nav-link"
+           href="{{ url_for('teacher_chapters', subject_id=subject.subject_id) }}">
+            Chapters
+        </a>
+
+        <a class="nav-link active">Quizzes</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
 
-<!-- CONTENT -->
+
 <div class="container">
 
     <div class="header">
-        <h1 style="color:var(--white);">
-            Quizzes — {{ chapter.name }}
-        </h1>
-        <a href="{{ url_for('teacher_chapters', subject_id=chapter.subject_id) }}"
-           class="nav-link">← Back</a>
+        <h1>Quizzes — {{ chapter.name }}</h1>
+        <div class="search-box">
+            <input type="text" placeholder="Search quizzes…" onkeyup="filterQuizzes(this.value)">
+            <button class="btn-primary" onclick="openModal()">➕ Add</button>
+        </div>
     </div>
 
-    <!-- ADD QUIZ -->
-    <div class="card">
-        <h3>Create New Quiz</h3>
-        <form method="POST" action="{{ url_for('create_quiz') }}">
-            <input type="hidden" name="chapter_id" value="{{ chapter.chapter_id }}">
-            <label>Scheduled Date</label>
-            <input type="datetime-local" name="scheduled_date" required>
+    {% if quizzes %}
+    <div class="grid">
+        {% for q in quizzes %}
+        <div class="card quiz-card"
+             data-name="{{ q.title|lower }}"
+             data-title="{{ q.title }}"
+             data-description="{{ q.description }}"
+             data-duration="{{ q.duration }}"
+             data-date="{{ q.scheduled_date|replace(' ', 'T') }}"
+             data-edit-url="{{ url_for('edit_quiz', quiz_id=q.quiz_id) }}">
 
-            <label>Duration (minutes)</label>
-            <input type="number" name="duration" min="1" required>
+            <h3>{{ q.title }}</h3>
+            <p>{{ q.description or "No description" }}</p>
 
-            <button class="btn-add" type="submit">Create Quiz</button>
-        </form>
-    </div>
-
-    <!-- QUIZ LIST -->
-    {% for q in quizzes %}
-    <div class="card">
-        <h3>Quiz #{{ q.quiz_id }}</h3>
-        <p>
-            Scheduled: {{ q.scheduled_date }} <br>
-            Duration: {{ q.duration }} mins <br>
-            Status: {{ q.status }}
-        </p>
-
-        <!-- EDIT -->
-        <form method="POST" action="{{ url_for('edit_quiz', quiz_id=q.quiz_id) }}">
-            <label>Scheduled Date</label>
-            <input type="datetime-local" name="scheduled_date" value="{{ q.scheduled_date|replace(' ','T') }}" required>
-
-            <label>Duration (minutes)</label>
-            <input type="number" name="duration" value="{{ q.duration }}" required>
-
-            <label>Status</label>
-            <select name="status">
-                <option value="active" {% if q.status == 'active' %}selected{% endif %}>Active</option>
-                <option value="inactive" {% if q.status == 'inactive' %}selected{% endif %}>Inactive</option>
-            </select>
+            <div class="badges">
+                <div class="badge">📘 {{ subject.name }}</div>
+                <div class="badge">📗 {{ chapter.name }}</div>
+                <div class="badge">⏱ {{ q.duration }} mins</div>
+                <div class="badge">📅 {{ q.scheduled_date }}</div>
+            </div>
 
             <div class="actions">
-                <button class="btn-edit" type="submit">Update</button>
-                <a href="{{ url_for('teacher_questions', quiz_id=q.quiz_id) }}">
-                    <button type="button" class="btn-add">Questions</button>
-                </a>
-                <a href="{{ url_for('quiz_analytics', quiz_id=q.quiz_id) }}">
-                    <button type="button" class="btn-add">Analytics</button>
-                </a>
-            </div>
-        </form>
+                <button class="btn-secondary" onclick="editQuiz(this)">Edit</button>
 
-        <!-- DELETE -->
-        <form method="POST"
-              action="{{ url_for('delete_quiz', quiz_id=q.quiz_id) }}"
-              onsubmit="return confirm('Delete this quiz?');"
-              style="margin-top:10px;">
-            <button class="btn-delete" type="submit">Delete</button>
+                <a href="{{ url_for('teacher_questions', quiz_id=q.quiz_id) }}">
+                    <button class="btn-primary">Questions</button>
+                </a>
+
+                <form method="POST"
+                      action="{{ url_for('delete_quiz', quiz_id=q.quiz_id) }}"
+                      onsubmit="return confirm('Delete this quiz? All questions will be removed.');">
+                    <button class="btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No quizzes yet.</div>
+    {% endif %}
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <h3 id="modalTitle">Create Quiz</h3>
+
+        <form method="POST" action="{{ url_for('create_quiz') }}" id="modalForm">
+            <input type="hidden" name="chapter_id" value="{{ chapter.chapter_id }}">
+
+            <div class="form-group">
+                <label>Quiz Title</label>
+                <input type="text" name="title" id="quizTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" id="quizDesc"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Duration (minutes)</label>
+                <input type="number" name="duration" id="quizDuration" required>
+            </div>
+
+            <div class="form-group">
+                <label>Scheduled Date</label>
+                <input type="datetime-local" name="scheduled_date" id="quizDate" required>
+            </div>
+
+            <button class="btn-primary" type="submit">Save Quiz</button>
+            <button type="button" onclick="closeModal()">Cancel</button>
         </form>
     </div>
-    {% endfor %}
-
 </div>
+
+<script>
+function openModal(){
+    document.getElementById('modal').classList.add('active');
+    document.getElementById('modalForm').reset();
+    document.getElementById('modalTitle').innerText = 'Create Quiz';
+
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('quizDate').value = now.toISOString().slice(0,16);
+}
+
+function closeModal(){
+    document.getElementById('modal').classList.remove('active');
+}
+
+function editQuiz(btn){
+    openModal();
+
+    const card = btn.closest('.quiz-card');
+
+    document.getElementById('modalTitle').innerText = 'Edit Quiz';
+    document.getElementById('quizTitle').value = card.dataset.title;
+    document.getElementById('quizDesc').value = card.dataset.description || '';
+    document.getElementById('quizDuration').value = card.dataset.duration;
+    document.getElementById('quizDate').value = card.dataset.date;
+
+    document.getElementById('modalForm').action = card.dataset.editUrl;
+}
+
+function filterQuizzes(val){
+    document.querySelectorAll('.quiz-card').forEach(function(c){
+        c.style.display = c.dataset.name.includes(val.toLowerCase()) ? 'block' : 'none';
+    });
+}
+</script>
 
 </body>
 </html>
