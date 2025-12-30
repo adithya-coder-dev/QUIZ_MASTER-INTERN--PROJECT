@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Quiz Result | Quiz Master</title>
+<title>Your Quiz Results | Quiz Master</title>
 
 <style>
 :root{
@@ -10,9 +10,12 @@
     --panel:#161b22;
     --border:#30363d;
     --text:#c9d1d9;
+    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
-    --success:#238636;
+    --green:#2ea043;
+    --red:#f85149;
+    --radius:14px;
 }
 
 *{
@@ -46,16 +49,15 @@ body{
 
 .nav-links{
     display:flex;
-    gap:18px;
-    align-items:center;
+    gap:16px;
 }
 
 .nav-link{
     color:var(--text);
     text-decoration:none;
-    font-size:14px;
     padding:6px 10px;
     border-radius:6px;
+    font-size:14px;
 }
 
 .nav-link:hover{
@@ -65,49 +67,62 @@ body{
 
 /* CONTENT */
 .container{
-    max-width:700px;
-    margin:40px auto;
-    padding:20px;
+    max-width:1100px;
+    margin:30px auto;
+    padding:0 20px;
 }
 
-.result-card{
+h1{
+    color:var(--white);
+    margin-bottom:6px;
+}
+.subtitle{
+    color:var(--muted);
+    margin-bottom:24px;
+}
+
+/* TABLE */
+.table-wrap{
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:14px;
-    padding:30px;
-    text-align:center;
+    border-radius:var(--radius);
+    overflow:hidden;
 }
 
-.score{
-    font-size:48px;
-    color:var(--success);
-    font-weight:700;
-    margin:20px 0;
+table{
+    width:100%;
+    border-collapse:collapse;
 }
 
-.meta{
+th,td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
     font-size:14px;
-    color:#8b949e;
-    margin-bottom:20px;
 }
 
-.actions{
-    margin-top:30px;
+th{
+    background:#1f2630;
+    color:var(--white);
+    text-align:left;
 }
 
-.actions a{
-    margin:0 10px;
-    padding:10px 20px;
+tr:hover{
+    background:rgba(255,255,255,.04);
+}
+
+/* STATUS */
+.pass{color:var(--green);font-weight:600}
+.fail{color:var(--red);font-weight:600}
+
+/* BUTTON */
+.btn{
+    padding:6px 12px;
+    border-radius:6px;
     background:var(--accent);
     color:#000;
-    border-radius:8px;
-    text-decoration:none;
+    font-size:12px;
     font-weight:600;
-    font-size:14px;
-}
-
-.actions a:hover{
-    opacity:0.9;
+    text-decoration:none;
 }
 </style>
 </head>
@@ -117,41 +132,56 @@ body{
 <!-- NAVBAR -->
 <nav class="navbar">
     <div class="brand">Quiz Master</div>
-
     <div class="nav-links">
-        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Home</a>
-        <a class="nav-link" href="{{ url_for('user_quizzes') }}">Scores</a>
-        <a class="nav-link" href="#">Summary</a>
-
+        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Dashboard</a>
+        <a class="nav-link" href="{{ url_for('user_quizzes') }}">Results</a>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container">
+    <h1>📊 Your Quiz Results</h1>
+    <p class="subtitle">All attempted quizzes with detailed scores</p>
 
-    <div class="result-card">
-        <h1 style="color:var(--white);">Quiz Completed 🎉</h1>
-
-        <div class="score">
-            {{ attempt.score }} / {{ total_questions }}
-        </div>
-
-        <div class="meta">
-            Quiz ID: {{ quiz.quiz_id }} <br>
-            Attempted On: {{ attempt.submitted_at }}
-        </div>
-
-        <div class="actions">
-            <a href="{{ url_for('quiz_review', attempt_id=attempt.attempt_id) }}">
-                Review Answers
-            </a>
-            <a href="{{ url_for('user_dashboard') }}">
-                Back to Dashboard
-            </a>
-        </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Chapter</th>
+                    <th>Quiz</th>
+                    <th>Score</th>
+                    <th>%</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in attempts %}
+                {% set total = a.quiz.questions|length %}
+                {% set percent = (a.score / total * 100) if total > 0 else 0 %}
+                <tr>
+                    <td>{{ a.quiz.chapter.subject.name }}</td>
+                    <td>{{ a.quiz.chapter.name }}</td>
+                    <td>{{ a.quiz.quiz_name or a.quiz.name or ("Quiz " ~ a.quiz.quiz_id) }}</td>
+                    <td>{{ a.score }} / {{ total }}</td>
+                    <td>{{ percent|round(1) }}%</td>
+                    <td class="{{ 'pass' if percent>=40 else 'fail' }}">
+                        {{ 'Pass' if percent>=40 else 'Fail' }}
+                    </td>
+                    <td>{{ a.submitted_at.strftime("%d %b %Y") }}</td>
+                    <td>
+                        <a class="btn"
+                           href="{{ url_for('quiz_review', attempt_id=a.attempt_id) }}">
+                            Review
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
 </div>
 
 </body>

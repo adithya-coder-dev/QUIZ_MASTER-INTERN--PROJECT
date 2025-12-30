@@ -1,6 +1,9 @@
 import os
 from functools import wraps
 from datetime import datetime
+from flask_login import current_user
+from flask import abort
+from flask_login import LoginManager, login_required, current_user
 
 from flask import (
     Flask, render_template, request,
@@ -22,6 +25,18 @@ from sqlalchemy.orm import joinedload
 # APP SETUP
 # ============================================================
 app = Flask(__name__)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+@login_manager.user_loader
+def load_user(user_id):
+    user = User.query.get(int(user_id))
+    if user and not user.is_active:
+        return None
+    return user
+
+
 app.config.from_object(Config)
 
 db.init_app(app)
@@ -270,20 +285,26 @@ def admin_dashboard():
 # ============================================================
 # USER — UPCOMING QUIZZES (ADDED)
 # ============================================================
-@app.route("/user/quizzes")
+@app.route("/user/results")
 @login_required
 @role_required("user")
 def user_quizzes():
-    quizzes = Quiz.query.filter(
-        Quiz.status == "active",
-        Quiz.scheduled_date >= datetime.utcnow()
-    ).order_by(Quiz.scheduled_date).all()
+    attempts = (
+        db.session.query(QuizAttempt)
+        .join(Quiz)
+        .join(Chapter)
+        .join(Subject)
+        .filter(QuizAttempt.submitted == True)
+        .filter(QuizAttempt.user_id == current_user.user_id)
+        .order_by(QuizAttempt.submitted_at.desc())
+        .all()
+    )
 
     return render_template(
-        "user/quizzes.html",
-        quizzes=quizzes,
-        has_attempted=has_attempted
+        "user/results.html",
+        attempts=attempts
     )
+
 
 @app.route("/quizzes/<int:quiz_id>/begin")
 @login_required
@@ -809,13 +830,13 @@ def quiz_analytics(quiz_id):
 @login_required
 @role_required("teacher")
 def teacher_results():
+    page = request.args.get("page", 1, type=int)
+
     attempts = (
         QuizAttempt.query
-        .join(User, User.user_id == QuizAttempt.user_id)
-        .join(Quiz, Quiz.quiz_id == QuizAttempt.quiz_id)
         .filter(QuizAttempt.submitted == True)
-        .order_by(QuizAttempt.submitted_at.desc())
-        .all()
+        .order_by(QuizAttempt.attempt_id.desc())  # ✅ FIX HERE
+        .paginate(page=page, per_page=10)
     )
 
     return render_template(
@@ -823,25 +844,46 @@ def teacher_results():
         attempts=attempts
     )
 
-# ============================================================ #
-#Teacher – View All Quiz 
-# ============================================================ #
-@app.route("/teacher/quizzes/all")
+
+# ============================================================
+# TEACHER — MANAGE STUDENTS
+# ============================================================
+@app.route("/teacher/manage-students")
 @login_required
 @role_required("teacher")
-def teacher_all_quizzes():
-    return render_template(
-        "teacher_all_quizzes.html",
-        quizzes=Quiz.query.all(),
-        subjects=Subject.query.all(),
-        chapters=Chapter.query.all(),
-        total_subjects=Subject.query.count(),
-        total_chapters=Chapter.query.count(),
-        total_quizzes=Quiz.query.count()
+def teacher_manage_students():
+    students = (
+        User.query
+        .join(UserRole)
+        .join(Role)
+        .filter(Role.name == "student")
+        .order_by(User.username)
+        .all()
     )
-# ============================================================ #
-#=============================================================#
 
+    return render_template(
+        "teacher/manage_students.html",
+        students=students
+    )
+
+
+
+@app.route("/teacher/student/toggle/<int:student_id>", methods=["POST"])
+@login_required
+@role_required("teacher")
+def toggle_student(student_id):
+    student = User.query.get_or_404(student_id)
+
+    # Safety check: only students can be blocked
+    if not any(r.name == "student" for r in student.roles):
+        abort(403)
+
+    student.is_active = not student.is_active
+    db.session.commit()
+
+    return redirect(url_for("teacher_manage_students"))
+
+# ============================================================ #
 #    Teacher – View Detailed Result of a Student    #
 # ============================================================
 @app.route("/teacher/results/<int:attempt_id>")
@@ -870,7 +912,68 @@ def teacher_result_detail(attempt_id):
 @login_required
 @role_required("teacher")
 def teacher_summary():
-    return render_template("teacher/summary.html")
+    quizzes = Quiz.query.all()
+
+    labels = []
+    attempts_data = []
+    avg_scores = []
+
+    pass_count = 0
+    fail_count = 0
+
+    for q in quizzes:
+        # ✅ Safe quiz label
+        quiz_label = (
+            getattr(q, "quiz_name", None)
+            or getattr(q, "name", None)
+            or f"Quiz {q.quiz_id}"
+        )
+        labels.append(quiz_label)
+
+        # Get total questions for this quiz
+        total_questions = Question.query.filter_by(
+            quiz_id=q.quiz_id
+        ).count()
+
+        attempts = QuizAttempt.query.filter_by(
+            quiz_id=q.quiz_id,
+            submitted=True
+        ).all()
+
+        attempts_data.append(len(attempts))
+
+        # Average score
+        if attempts:
+            avg = round(sum(a.score for a in attempts) / len(attempts), 2)
+        else:
+            avg = 0
+        avg_scores.append(avg)
+
+        # Pass / Fail calculation (40% rule)
+        for a in attempts:
+            if total_questions > 0:
+                percent = (a.score / total_questions) * 100
+            else:
+                percent = 0
+
+            if percent >= 40:
+                pass_count += 1
+            else:
+                fail_count += 1
+
+    analytics = {
+        "labels": labels,
+        "attempts": attempts_data,
+        "averages": avg_scores,
+        "pass": pass_count,
+        "fail": fail_count
+    }
+
+    return render_template(
+        "teacher/summary.html",
+        analytics=analytics
+    )
+
 
 
 # ============================================================

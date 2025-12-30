@@ -2,16 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Results | Quiz Master</title>
+<title>All Quiz Results | Quiz Master</title>
 
 <style>
 :root{
     --bg:#0d1117;
     --panel:#161b22;
+    --panel-soft:#1f2630;
     --border:#30363d;
     --text:#c9d1d9;
+    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
+    --green:#2ea043;
+    --red:#f85149;
+    --radius:14px;
+}
+
+/* LIGHT MODE */
+body.light{
+    --bg:#f6f8fa;
+    --panel:#ffffff;
+    --panel-soft:#f0f2f5;
+    --border:#d0d7de;
+    --text:#24292f;
+    --muted:#57606a;
+    --white:#000000;
 }
 
 *{
@@ -45,7 +61,8 @@ body{
 
 .nav-links{
     display:flex;
-    gap:18px;
+    gap:14px;
+    align-items:center;
 }
 
 .nav-link{
@@ -61,55 +78,109 @@ body{
     color:var(--white);
 }
 
-/* CONTENT */
-.container{
-    max-width:1100px;
-    margin:30px auto;
-    padding:0 20px;
+.nav-link.active{
+    background:var(--panel-soft);
+    color:var(--white);
 }
 
-h1{
+.theme-toggle{
+    cursor:pointer;
+    padding:6px 10px;
+    border-radius:6px;
+}
+.theme-toggle:hover{
+    background:var(--border);
+}
+
+/* CONTENT */
+.container{
+    max-width:1400px;
+    margin:28px auto;
+    padding:0 22px;
+}
+
+.header{
+    margin-bottom:18px;
+}
+.header h1{
     color:var(--white);
-    margin-bottom:20px;
+    font-size:24px;
+}
+.header p{
+    color:var(--muted);
+    margin-top:6px;
+}
+
+/* SEARCH */
+.search-box{
+    margin-bottom:16px;
+}
+.search-box input{
+    width:100%;
+    padding:10px 14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
 }
 
 /* TABLE */
-table{
-    width:100%;
-    border-collapse:collapse;
+.table-wrap{
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:12px;
+    border-radius:var(--radius);
     overflow:hidden;
 }
 
-thead{
-    background:#0d1117;
+table{
+    width:100%;
+    border-collapse:collapse;
 }
 
-th, td{
+th,td{
     padding:12px 14px;
-    text-align:left;
     border-bottom:1px solid var(--border);
     font-size:14px;
+    white-space:nowrap;
 }
 
 th{
+    background:var(--panel-soft);
     color:var(--white);
+    text-align:left;
+    font-size:13px;
+}
+
+tbody tr{
+    cursor:pointer;
 }
 
 tbody tr:hover{
-    background:#0d1117;
+    background:rgba(255,255,255,.04);
 }
 
-.view-link{
-    color:var(--accent);
+.pass{color:var(--green);font-weight:600}
+.fail{color:var(--red);font-weight:600}
+
+/* PAGINATION */
+.pagination{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:18px;
+}
+
+.pagination a{
+    padding:6px 12px;
+    border-radius:6px;
+    background:var(--panel-soft);
+    color:var(--text);
     text-decoration:none;
-    font-weight:600;
 }
 
-.view-link:hover{
-    text-decoration:underline;
+.pagination a.active{
+    background:var(--accent);
+    color:#000;
 }
 </style>
 </head>
@@ -121,51 +192,103 @@ tbody tr:hover{
     <div class="brand">Quiz Master</div>
     <div class="nav-links">
         <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
-        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Subjects</a>
+        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Quizzes</a>
+        <a class="nav-link" href="{{ url_for('teacher_summary') }}">Summary</a>
+        <a class="nav-link active" href="{{ url_for('teacher_results') }}">Results</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container">
 
-    <h1>All Quiz Results</h1>
+<div class="header">
+    <h1>📊 All Student Quiz Results</h1>
+    <p>Click a row to review answers</p>
+</div>
 
-    {% if attempts %}
-    <table>
-        <thead>
-            <tr>
-                <th>Attempt ID</th>
-                <th>Student</th>
-                <th>Quiz ID</th>
-                <th>Score</th>
-                <th>Submitted At</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for a in attempts %}
-            <tr>
-                <td>{{ a.attempt_id }}</td>
-                <td>{{ a.user.username }}</td>
-                <td>{{ a.quiz.quiz_id }}</td>
-                <td>{{ a.score }}</td>
-                <td>{{ a.submitted_at }}</td>
-                <td>
-                    <a class="view-link"
-                       href="{{ url_for('teacher_result_detail', attempt_id=a.attempt_id) }}">
-                        View Details
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-        <p>No results available.</p>
-    {% endif %}
+<!-- SEARCH -->
+<div class="search-box">
+    <input type="text"
+           placeholder="Search student / subject / chapter / quiz"
+           onkeyup="filterTable(this.value)">
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+<table id="resultsTable">
+<thead>
+<tr>
+    <th>Student</th>
+    <th>Subject</th>
+    <th>Chapter</th>
+    <th>Quiz</th>
+    <th>Score</th>
+    <th>%</th>
+    <th>Status</th>
+    <th>Attempt</th>
+</tr>
+</thead>
+<tbody>
+{% for a in attempts.items %}
+{% set total = a.quiz.questions|length %}
+{% set percent = (a.score / total * 100) if total > 0 else 0 %}
+<tr data-attempt-id="{{ a.attempt_id }}"
+    data-search="{{ (a.user.username ~ ' ' ~ a.quiz.chapter.subject.name ~ ' ' ~ a.quiz.chapter.name)|lower }}"
+    onclick="openAttempt(this)">
+    <td>{{ a.user.username }}</td>
+    <td>{{ a.quiz.chapter.subject.name }}</td>
+    <td>{{ a.quiz.chapter.name }}</td>
+    <td>Quiz {{ a.quiz.quiz_id }}</td>
+    <td>{{ a.score }} / {{ total }}</td>
+    <td>{{ percent|round(1) }}%</td>
+    <td class="{{ 'pass' if percent >= 40 else 'fail' }}">
+        {{ 'Pass' if percent >= 40 else 'Fail' }}
+    </td>
+    <td>#{{ a.attempt_id }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<!-- PAGINATION -->
+<div class="pagination">
+{% for p in range(1, attempts.pages + 1) %}
+<a href="{{ url_for('teacher_results', page=p) }}"
+   class="{{ 'active' if p == attempts.page else '' }}">
+   {{ p }}
+</a>
+{% endfor %}
+</div>
 
 </div>
+
+<script>
+function filterTable(val){
+    const q = val.toLowerCase();
+    document.querySelectorAll("#resultsTable tbody tr").forEach(row=>{
+        row.style.display = row.dataset.search.includes(q) ? "" : "none";
+    });
+}
+
+function openAttempt(row){
+    const id = row.dataset.attemptId;
+    window.location.href = "/quiz/review/" + id;
+}
+
+function toggleTheme(){
+    document.body.classList.toggle("light");
+    localStorage.setItem(
+        "theme",
+        document.body.classList.contains("light") ? "light" : "dark"
+    );
+}
+
+if(localStorage.getItem("theme") === "light"){
+    document.body.classList.add("light");
+}
+</script>
 
 </body>
 </html>

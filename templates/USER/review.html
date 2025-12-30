@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Quiz Review | Quiz Master</title>
+<title>Review Answers | Quiz Master</title>
 
 <style>
 :root{
@@ -10,10 +10,12 @@
     --panel:#161b22;
     --border:#30363d;
     --text:#c9d1d9;
-    --white:#f0f6fc;
-    --green:#238636;
-    --red:#da3633;
     --muted:#8b949e;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+    --green:#2ea043;
+    --red:#f85149;
+    --radius:14px;
 }
 
 *{
@@ -57,7 +59,6 @@ body{
     padding:6px 10px;
     border-radius:6px;
 }
-
 .nav-link:hover{
     background:var(--border);
     color:var(--white);
@@ -70,43 +71,85 @@ body{
     padding:0 20px;
 }
 
+h1{
+    color:var(--white);
+    margin-bottom:6px;
+}
+
+.subtitle{
+    color:var(--muted);
+    margin-bottom:26px;
+}
+
+/* QUESTION CARD */
 .question-card{
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:12px;
-    padding:20px;
+    border-radius:var(--radius);
+    padding:22px;
     margin-bottom:20px;
 }
 
-.question-card h3{
+.question-title{
+    font-size:16px;
     color:var(--white);
-    margin-bottom:10px;
+    margin-bottom:14px;
+}
+
+/* OPTIONS */
+.options{
+    list-style:none;
+    display:grid;
+    gap:10px;
 }
 
 .option{
-    padding:10px 14px;
-    border-radius:6px;
-    margin:6px 0;
-    font-size:14px;
+    padding:12px 14px;
+    border-radius:10px;
     border:1px solid var(--border);
+    background:#0b1220;
+    font-size:14px;
 }
 
+/* STATES */
 .correct{
-    background:#12261f;
     border-color:var(--green);
-    color:#b7f5c8;
+    background:rgba(46,160,67,.15);
+    color:#3fb950;
+    font-weight:600;
 }
 
 .wrong{
-    background:#2a1215;
     border-color:var(--red);
-    color:#ffb3b3;
+    background:rgba(248,81,73,.15);
+    color:#f85149;
+    font-weight:600;
 }
 
-.neutral{
-    background:#0d1117;
-    color:var(--muted);
+.selected{
+    outline:2px solid var(--accent);
 }
+
+/* LEGEND */
+.legend{
+    display:flex;
+    gap:18px;
+    margin-bottom:24px;
+    font-size:13px;
+}
+.legend span{
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+}
+.dot.correct{background:var(--green)}
+.dot.wrong{background:var(--red)}
+.dot.selected{background:var(--accent)}
 </style>
 </head>
 
@@ -116,43 +159,56 @@ body{
 <nav class="navbar">
     <div class="brand">Quiz Master</div>
     <div class="nav-links">
-        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('user_dashboard') }}">Dashboard</a>
         <a class="nav-link" href="{{ url_for('user_quizzes') }}">Scores</a>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container">
-    <h1 style="color:var(--white); margin-bottom:20px;">Quiz Review</h1>
 
-    {% for q in questions %}
-    {% set ans = answer_map.get(q.question_id) %}
-    <div class="question-card">
-        <h3>Q{{ loop.index }}. {{ q.title }}</h3>
-        <p style="margin-bottom:12px;">{{ q.statement }}</p>
+<h1>📘 Review Answers</h1>
+<p class="subtitle">See correct answers and your selections.</p>
 
-        {% for i in [1,2,3,4] %}
-            {% set opt = getattr(q, 'option_' ~ i) %}
+<!-- LEGEND -->
+<div class="legend">
+    <span><i class="dot correct"></i> Correct Answer</span>
+    <span><i class="dot selected"></i> Your Choice</span>
+    <span><i class="dot wrong"></i> Wrong Choice</span>
+</div>
 
-            {% if i == q.correct_option %}
-                <div class="option correct">
-                    ✔ {{ opt }} (Correct)
-                </div>
+{% for q in questions %}
+<div class="question-card">
 
-            {% elif ans and i == ans.selected_option %}
-                <div class="option wrong">
-                    ✖ {{ opt }} (Your Answer)
-                </div>
-
-            {% else %}
-                <div class="option neutral">
-                    {{ opt }}
-                </div>
-            {% endif %}
-        {% endfor %}
+    <div class="question-title">
+        {{ loop.index }}. {{ q.question_text }}
     </div>
+
+    <ul class="options">
+    {% set user_ans = answer_map.get(q.question_id) %}
+    {% for i in range(1,5) %}
+        {% set opt = q | attr('option_' ~ i) %}
+
+        {% set classes = [] %}
+        {% if i == q.correct_option %}
+            {% set _ = classes.append('correct') %}
+        {% endif %}
+        {% if user_ans and i == user_ans.selected_option %}
+            {% set _ = classes.append('selected') %}
+            {% if i != q.correct_option %}
+                {% set _ = classes.append('wrong') %}
+            {% endif %}
+        {% endif %}
+
+        <li class="option {{ ' '.join(classes) }}">
+            {{ opt }}
+        </li>
     {% endfor %}
+    </ul>
+
+</div>
+{% endfor %}
+
 </div>
 
 </body>

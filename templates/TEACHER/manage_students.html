@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Students | Quiz Master</title>
+
+<style>
+:root{
+    --bg:#0d1117;
+    --panel:#161b22;
+    --panel-soft:#1f2630;
+    --border:#30363d;
+    --text:#c9d1d9;
+    --muted:#8b949e;
+    --white:#f0f6fc;
+    --accent:#58a6ff;
+    --green:#2ea043;
+    --red:#f85149;
+    --radius:14px;
+}
+
+/* LIGHT MODE */
+body.light{
+    --bg:#f6f8fa;
+    --panel:#ffffff;
+    --panel-soft:#f0f2f5;
+    --border:#d0d7de;
+    --text:#24292f;
+    --muted:#57606a;
+    --white:#000000;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;}
+body{background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* NAVBAR */
+.navbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 28px;background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+.brand{font-size:18px;font-weight:600;color:var(--white);}
+.nav-links{display:flex;gap:14px;align-items:center;}
+.nav-link{
+    color:var(--text);text-decoration:none;font-size:14px;
+    padding:6px 10px;border-radius:6px;
+}
+.nav-link:hover{background:var(--border);color:var(--white);}
+.nav-link.active{background:var(--panel-soft);color:var(--white);}
+.theme-toggle{cursor:pointer;padding:6px 10px;border-radius:6px;}
+.theme-toggle:hover{background:var(--border);}
+
+/* CONTENT */
+.container{max-width:1100px;margin:30px auto;padding:0 22px;}
+.header h1{color:var(--white);}
+.header p{color:var(--muted);margin-top:6px}
+
+/* SEARCH */
+.search-box{margin:16px 0;}
+.search-box input{
+    width:100%;padding:10px 14px;border-radius:10px;
+    border:1px solid var(--border);background:var(--panel);
+    color:var(--text);
+}
+
+/* TABLE */
+.table-wrap{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+}
+table{width:100%;border-collapse:collapse;}
+th,td{
+    padding:14px;border-bottom:1px solid var(--border);
+    font-size:14px;text-align:left;
+}
+th{background:var(--panel-soft);color:var(--white);}
+
+.status-active{color:var(--green);font-weight:600;}
+.status-blocked{color:var(--red);font-weight:600;}
+
+button{
+    padding:6px 12px;border:none;border-radius:6px;
+    cursor:pointer;font-size:13px;
+}
+.block{background:var(--red);color:#fff;}
+.unblock{background:var(--green);color:#000;}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
+        <a class="nav-link active" href="{{ url_for('teacher_manage_students') }}">Students</a>
+        <a class="nav-link" href="{{ url_for('teacher_summary') }}">Summary</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+
+<div class="header">
+    <h1>👨‍🎓 Manage Students</h1>
+    <p>Block or unblock student login access</p>
+</div>
+
+<div class="search-box">
+    <input type="text" placeholder="Search students..."
+           onkeyup="filterStudents(this.value)">
+</div>
+
+<div class="table-wrap">
+<table id="studentsTable">
+<thead>
+<tr>
+    <th>Username</th>
+    <th>Email</th>
+    <th>Status</th>
+    <th>Action</th>
+</tr>
+</thead>
+<tbody>
+{% for s in students %}
+<tr data-search="{{ (s.username ~ ' ' ~ s.email)|lower }}">
+    <td>{{ s.username }}</td>
+    <td>{{ s.email }}</td>
+    <td class="{{ 'status-active' if s.is_active else 'status-blocked' }}">
+        {{ 'Active' if s.is_active else 'Blocked' }}
+    </td>
+    <td>
+        <form method="post"
+              action="{{ url_for('toggle_student', student_id=s.user_id) }}">
+            <button class="{{ 'block' if s.is_active else 'unblock' }}">
+                {{ 'Block' if s.is_active else 'Unblock' }}
+            </button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+function filterStudents(val){
+    const q = val.toLowerCase();
+    document.querySelectorAll("#studentsTable tbody tr").forEach(row=>{
+        row.style.display = row.dataset.search.includes(q) ? "" : "none";
+    });
+}
+
+function toggleTheme(){
+    document.body.classList.toggle("light");
+    localStorage.setItem(
+        "theme",
+        document.body.classList.contains("light") ? "light" : "dark"
+    );
+}
+if(localStorage.getItem("theme")==="light"){
+    document.body.classList.add("light");
+}
+</script>
+
+</body>
+</html>

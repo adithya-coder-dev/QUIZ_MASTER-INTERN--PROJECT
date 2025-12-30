@@ -8,22 +8,18 @@
 :root{
     --bg:#0d1117;
     --panel:#161b22;
-    --panel-soft:#1f2630;
     --border:#30363d;
     --text:#c9d1d9;
-    --muted:#8b949e;
     --white:#f0f6fc;
     --accent:#58a6ff;
 }
 
-/* LIGHT THEME */
+/* LIGHT MODE */
 body.light{
     --bg:#f6f8fa;
     --panel:#ffffff;
-    --panel-soft:#f0f2f5;
     --border:#d0d7de;
     --text:#24292f;
-    --muted:#57606a;
     --white:#000000;
 }
 
@@ -58,7 +54,7 @@ body{
 
 .nav-links{
     display:flex;
-    gap:18px;
+    gap:14px;
     align-items:center;
 }
 
@@ -75,7 +71,6 @@ body{
     color:var(--white);
 }
 
-/* THEME TOGGLE */
 .theme-toggle{
     cursor:pointer;
     padding:6px 10px;
@@ -90,45 +85,10 @@ body{
     padding:30px;
 }
 
-/* STATS */
-.stats{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:16px;
-    margin:22px 0;
-}
+.section{display:none}
+.section.active{display:block}
 
-.stat{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:18px;
-}
-
-.stat h3{
-    color:var(--white);
-    font-size:22px;
-}
-
-.stat p{
-    color:var(--muted);
-}
-
-/* SEARCH */
-.search-box{
-    margin:24px 0 14px;
-}
-
-.search-box input{
-    width:100%;
-    padding:10px 12px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background:var(--panel);
-    color:var(--text);
-}
-
-/* GRID */
+/* CARDS */
 .card-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -151,21 +111,37 @@ body{
 .card p{
     font-size:14px;
     margin-bottom:16px;
-    color:var(--muted);
 }
 
-/* QUIZ BADGES */
-.badges{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
+.card a{
+    color:var(--accent);
+    text-decoration:none;
+    font-weight:600;
 }
 
-.badge{
+/* SEARCH */
+.search-box{
+    margin:20px 0;
+}
+.search-box input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+}
+
+/* QUIZ LIST */
+.quiz-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px;
+}
+.quiz-meta{
     font-size:12px;
-    padding:4px 10px;
-    border-radius:999px;
-    background:var(--panel-soft);
+    opacity:.85;
 }
 </style>
 </head>
@@ -176,89 +152,95 @@ body{
 <nav class="navbar">
     <div class="brand">Quiz Master</div>
     <div class="nav-links">
-        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
-        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Quizzes</a>
+        <a class="nav-link" href="#" onclick="showSection('home')">Home</a>
+        <a class="nav-link" href="#" onclick="showSection('quizzes')">Quizzes</a>
         <a class="nav-link" href="{{ url_for('teacher_summary') }}">Summary</a>
         <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
     </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container">
+
+<!-- HOME -->
+<div id="home" class="section active">
     <h1 style="color:var(--white);">Teacher Dashboard</h1>
-    <p style="margin-top:6px;">Manage subjects, quizzes, and view student performance.</p>
+    <p>Manage subjects, quizzes, students, and results.</p>
 
-    <!-- STATS -->
-    <div class="stats">
-        <div class="stat">
-            <h3>{{ total_subjects }}</h3>
-            <p>Subjects</p>
-        </div>
-        <div class="stat">
-            <h3>{{ total_chapters }}</h3>
-            <p>Chapters</p>
-        </div>
-        <div class="stat">
-            <h3>{{ total_quizzes }}</h3>
-            <p>Quizzes</p>
-        </div>
-    </div>
-
-    <!-- ORIGINAL CARDS -->
     <div class="card-grid">
         <div class="card">
             <h3>Manage Subjects</h3>
-            <p>Create, edit, and delete subjects.</p>
+            <p>Create, edit, and delete subjects & chapters.</p>
             <a href="{{ url_for('teacher_subjects') }}">Open Subjects →</a>
         </div>
 
         <div class="card">
             <h3>Create Quizzes</h3>
-            <p>Build quizzes chapter-wise and schedule them.</p>
+            <p>Build quizzes chapter-wise.</p>
             <a href="{{ url_for('teacher_subjects') }}">Go to Quizzes →</a>
         </div>
-    </div>
 
-    <!-- SEARCH -->
+        <div class="card">
+            <h3>Manage Students</h3>
+            <p>Block / Unblock students (login control).</p>
+            <a href="{{ url_for('teacher_manage_students') }}">Manage Students →</a>
+        </div>
+
+        <div class="card">
+            <h3>View Results</h3>
+            <p>See results of all quiz attempts.</p>
+            <a href="{{ url_for('teacher_results') }}">View Results →</a>
+        </div>
+    </div>
+</div>
+
+<!-- QUIZZES -->
+<div id="quizzes" class="section">
+    <h2 style="color:var(--white);">All Quizzes</h2>
+
     <div class="search-box">
-        <input type="text" placeholder="Search quizzes…" onkeyup="filterQuizzes(this.value)">
+        <input type="text" placeholder="Search by quiz / subject / chapter"
+               onkeyup="filterQuizzes(this.value)">
     </div>
 
-    <!-- QUIZ LIST -->
     <div class="card-grid">
         {% for q in quizzes %}
-        <div class="card quiz-card" data-name="{{ q.title|lower }}">
+        <div class="quiz-card"
+             data-search="{{ q.title|lower }} {{ q.chapter.name|lower }} {{ q.chapter.subject.name|lower }}">
             <h3>{{ q.title }}</h3>
-            <p>{{ q.description or "No description" }}</p>
-            <div class="badges">
-                <span class="badge">📘 {{ q.chapter.subject.name }}</span>
-                <span class="badge">📗 {{ q.chapter.name }}</span>
-                <span class="badge">⏱ {{ q.duration }} mins</span>
+            <div class="quiz-meta">
+                📘 {{ q.chapter.subject.name }} • 📗 {{ q.chapter.name }}
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
 
+</div>
+
 <script>
+function showSection(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
 function filterQuizzes(val){
     document.querySelectorAll('.quiz-card').forEach(card=>{
         card.style.display =
-            card.dataset.name.includes(val.toLowerCase()) ? 'block' : 'none';
+            card.dataset.search.includes(val.toLowerCase()) ? 'block' : 'none';
     });
 }
 
 function toggleTheme(){
     document.body.classList.toggle('light');
     localStorage.setItem(
-        'theme',
-        document.body.classList.contains('light') ? 'light' : 'dark'
+        "theme",
+        document.body.classList.contains("light") ? "light" : "dark"
     );
 }
 
-if(localStorage.getItem('theme') === 'light'){
-    document.body.classList.add('light');
+if(localStorage.getItem("theme")==="light"){
+    document.body.classList.add("light");
 }
 </script>
 

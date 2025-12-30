@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>Teacher Summary | Quiz Master</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 :root{
     --bg:#0d1117;
@@ -15,265 +17,331 @@
     --white:#f0f6fc;
     --accent:#58a6ff;
     --green:#2ea043;
-    --red:#da3633;
-    --radius:14px;
+    --red:#f85149;
+    --radius:16px;
 }
 
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;}
-body{background:var(--bg);color:var(--text);min-height:100vh;}
+/* LIGHT MODE */
+body.light{
+    --bg:#f6f8fa;
+    --panel:#ffffff;
+    --panel-soft:#f0f2f5;
+    --border:#d0d7de;
+    --text:#24292f;
+    --muted:#57606a;
+    --white:#000000;
+}
 
-.container{max-width:1200px;margin:30px auto;padding:0 20px;}
-h1,h2{color:var(--white);margin-bottom:16px}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+}
 
-/* FILTER */
-select{
-    padding:10px 12px;
-    border-radius:10px;
-    border:1px solid var(--border);
+body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+}
+
+/* NAVBAR */
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+}
+
+.brand{
+    font-size:18px;
+    font-weight:600;
+    color:var(--white);
+}
+
+.nav-links{
+    display:flex;
+    gap:14px;
+    align-items:center;
+}
+
+.nav-link{
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.nav-link:hover{
+    background:var(--border);
+    color:var(--white);
+}
+
+.nav-link.active{
     background:var(--panel-soft);
     color:var(--white);
 }
 
-/* SUMMARY CARDS */
-.summary-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:16px;
-    margin:20px 0;
-}
-.summary-card{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:18px;
-}
-.summary-card h3{font-size:14px;color:var(--muted)}
-.summary-card p{font-size:26px;font-weight:700;color:var(--white)}
-
-/* BAR CHART */
-.chart{
-    display:flex;
-    gap:20px;
-    align-items:flex-end;
-    height:180px;
-    margin:20px 0 30px;
-}
-.bar{
-    flex:1;
-    background:var(--panel-soft);
-    border-radius:8px;
-    position:relative;
-}
-.bar span{
-    position:absolute;
-    bottom:100%;
-    left:50%;
-    transform:translateX(-50%);
-    margin-bottom:6px;
-    font-size:12px;
-}
-.bar-fill{
-    width:100%;
-    border-radius:8px;
-}
-.avg{background:var(--accent)}
-.max{background:#3fb950}
-.min{background:#f85149}
-
-/* TABLE */
-.table-wrap{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    overflow:hidden;
-}
-table{width:100%;border-collapse:collapse}
-th,td{
-    padding:12px 14px;
-    border-bottom:1px solid var(--border);
-    font-size:14px;
-}
-th{background:var(--panel-soft);color:var(--white)}
-tr:hover{background:rgba(255,255,255,.03)}
-
-.pass{color:#3fb950;font-weight:600}
-.fail{color:#f85149;font-weight:600}
-
-.rank{font-weight:700}
-.gold{color:#f9c513}
-.silver{color:#c9d1d9}
-.bronze{color:#cd7f32}
-
-button{
+.theme-toggle{
+    cursor:pointer;
     padding:6px 10px;
     border-radius:6px;
-    border:none;
-    font-size:12px;
-    cursor:pointer;
-    background:var(--accent);
+}
+.theme-toggle:hover{
+    background:var(--border);
 }
 
-/* MODAL */
-.modal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.6);
-    display:none;
-    justify-content:center;
-    align-items:center;
+/* LAYOUT */
+.container{
+    max-width:1200px;
+    margin:32px auto;
+    padding:0 22px;
 }
-.modal.active{display:flex}
-.modal-box{
-    width:420px;
+
+/* HEADER */
+.header{
+    margin-bottom:28px;
+}
+
+.header h1{
+    color:var(--white);
+    font-size:26px;
+}
+.header p{
+    color:var(--muted);
+    margin-top:6px;
+}
+
+/* STATS */
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
+    margin-bottom:32px;
+}
+
+.stat{
+    background:linear-gradient(145deg,var(--panel),var(--panel-soft));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+}
+
+.stat h3{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+}
+
+.stat p{
+    font-size:28px;
+    font-weight:700;
+    color:var(--white);
+}
+
+/* CHART GRID */
+.chart-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:22px;
+}
+
+.chart-card{
     background:var(--panel);
-    border-radius:16px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
     padding:22px;
 }
-.modal-box h3{color:var(--white);margin-bottom:10px}
-.modal-box p{margin-bottom:6px}
+
+.chart-card h3{
+    color:var(--white);
+    margin-bottom:14px;
+    font-size:16px;
+}
+
+.chart-wrap{
+    height:300px;
+}
+
+/* FOOTER NOTE */
+.note{
+    margin-top:32px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+}
 </style>
 </head>
 
 <body>
 
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="brand">Quiz Master</div>
+    <div class="nav-links">
+        <a class="nav-link" href="{{ url_for('teacher_dashboard') }}">Home</a>
+        <a class="nav-link" href="{{ url_for('teacher_subjects') }}">Quizzes</a>
+        <a class="nav-link active" href="{{ url_for('teacher_summary') }}">Summary</a>
+        <span class="theme-toggle" onclick="toggleTheme()">🌓</span>
+        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
 <div class="container">
 
-<h1>📊 Teacher Summary</h1>
-
-<select id="quizSelect" onchange="updateView()">
-    {% for q in quizzes %}
-    <option value="{{ q.quiz_id }}">{{ q.title }}</option>
-    {% endfor %}
-</select>
-
-<!-- ANALYTICS -->
-<div class="summary-grid">
-    <div class="summary-card"><h3>Attempts</h3><p id="a1">–</p></div>
-    <div class="summary-card"><h3>Average</h3><p id="a2">–</p></div>
-    <div class="summary-card"><h3>Highest</h3><p id="a3">–</p></div>
-    <div class="summary-card"><h3>Lowest</h3><p id="a4">–</p></div>
-</div>
-
-<!-- BAR CHART -->
-<div class="chart">
-    <div class="bar"><span>Avg</span><div class="bar-fill avg" id="cAvg"></div></div>
-    <div class="bar"><span>Max</span><div class="bar-fill max" id="cMax"></div></div>
-    <div class="bar"><span>Min</span><div class="bar-fill min" id="cMin"></div></div>
-</div>
-
-<h2>🏆 Student Performance</h2>
-
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-    <th>Rank</th>
-    <th>Student</th>
-    <th>Score</th>
-    <th>%</th>
-    <th>Status</th>
-    <th>Action</th>
-</tr>
-</thead>
-<tbody id="studentTable">
-{% for r in student_results %}
-<tr data-quiz="{{ r.quiz_id }}"
-    data-name="{{ r.student_name }}"
-    data-score="{{ r.score }}"
-    data-total="{{ r.total }}"
-    data-percent="{{ r.percent }}"
-    data-date="{{ r.attempted_on }}">
-    <td class="rank"></td>
-    <td>{{ r.student_name }}</td>
-    <td>{{ r.score }}/{{ r.total }}</td>
-    <td>{{ r.percent }}%</td>
-    <td class="{{ 'pass' if r.percent>=40 else 'fail' }}">
-        {{ 'Pass' if r.percent>=40 else 'Fail' }}
-    </td>
-    <td><button onclick="viewStudent(this)">View</button></td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-</div>
-
-</div>
-
-<!-- STUDENT MODAL -->
-<div class="modal" id="studentModal">
-    <div class="modal-box">
-        <h3 id="mName"></h3>
-        <p id="mScore"></p>
-        <p id="mPercent"></p>
-        <p id="mStatus"></p>
-        <p id="mDate"></p>
-        <button onclick="closeModal()">Close</button>
+    <!-- HEADER -->
+    <div class="header">
+        <h1>📊 Teacher Analytics Summary</h1>
+        <p>Student participation and performance overview</p>
     </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat">
+            <h3>Total Quizzes</h3>
+            <p>{{ analytics.labels|length }}</p>
+        </div>
+
+        <div class="stat">
+            <h3>Total Attempts</h3>
+            <p>{{ analytics.attempts | sum }}</p>
+        </div>
+
+        <div class="stat">
+            <h3>Average Performance</h3>
+            <p>
+                {{ (analytics.averages | sum / (analytics.averages | length or 1)) | round(1) }}%
+            </p>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="chart-grid">
+
+        <!-- ATTEMPTS -->
+        <div class="chart-card">
+            <h3>👥 Students Attended per Quiz</h3>
+            <div class="chart-wrap">
+                <canvas id="attemptChart"></canvas>
+            </div>
+        </div>
+
+        <!-- AVERAGE -->
+        <div class="chart-card">
+            <h3>📈 Average Performance per Quiz</h3>
+            <div class="chart-wrap">
+                <canvas id="avgChart"></canvas>
+            </div>
+        </div>
+
+        <!-- PASS FAIL -->
+        <div class="chart-card">
+            <h3>🥧 Overall Pass vs Fail</h3>
+            <div class="chart-wrap">
+                <canvas id="passFailChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="note">
+        Data reflects submitted quiz attempts only
+    </div>
+
 </div>
 
-<!-- ✅ SAFE JSON (NO JINJA IN JS) -->
+<!-- SAFE JSON -->
 <script type="application/json" id="analytics-data">
 {{ analytics | tojson | safe }}
 </script>
 
 <script>
-const quizAnalytics = JSON.parse(
+const data = JSON.parse(
     document.getElementById("analytics-data").textContent
 );
 
-function updateView(){
-    const qid = document.getElementById('quizSelect').value;
-    const a = quizAnalytics[qid];
-    if(!a) return;
+/* ATTEMPTS BAR */
+new Chart(document.getElementById("attemptChart"),{
+    type:"bar",
+    data:{
+        labels:data.labels,
+        datasets:[{
+            data:data.attempts,
+            backgroundColor:"#58a6ff",
+            borderRadius:6
+        }]
+    },
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+            y:{beginAtZero:true},
+            x:{grid:{display:false}}
+        }
+    }
+});
 
-    document.getElementById('a1').innerText = a.attempts;
-    document.getElementById('a2').innerText = a.avg + "%";
-    document.getElementById('a3').innerText = a.max + "%";
-    document.getElementById('a4').innerText = a.min + "%";
+/* AVERAGE LINE */
+new Chart(document.getElementById("avgChart"),{
+    type:"line",
+    data:{
+        labels:data.labels,
+        datasets:[{
+            data:data.averages,
+            borderColor:"#2ea043",
+            backgroundColor:"rgba(46,160,67,.25)",
+            fill:true,
+            tension:0.35,
+            pointRadius:4
+        }]
+    },
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+            y:{beginAtZero:true,max:100},
+            x:{grid:{display:false}}
+        }
+    }
+});
 
-    document.getElementById('cAvg').style.height = a.avg + "%";
-    document.getElementById('cMax').style.height = a.max + "%";
-    document.getElementById('cMin').style.height = a.min + "%";
+/* PASS FAIL PIE */
+new Chart(document.getElementById("passFailChart"),{
+    type:"pie",
+    data:{
+        labels:["Pass","Fail"],
+        datasets:[{
+            data:[data.pass, data.fail],
+            backgroundColor:["#2ea043","#f85149"]
+        }]
+    },
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+            legend:{
+                labels:{color:"#c9d1d9"}
+            }
+        }
+    }
+});
 
-    const rows = Array.from(document.querySelectorAll('#studentTable tr'))
-        .filter(r => r.dataset.quiz === qid)
-        .sort((x,y)=>Number(y.dataset.percent)-Number(x.dataset.percent));
-
-    rows.forEach((r,i)=>{
-        r.style.display='';
-        const rank=i+1;
-        const cell=r.querySelector('.rank');
-        cell.innerText=rank;
-        cell.className =
-            rank===1?'rank gold':
-            rank===2?'rank silver':
-            rank===3?'rank bronze':'rank';
-    });
-
-    document.querySelectorAll('#studentTable tr').forEach(r=>{
-        if(r.dataset.quiz!==qid) r.style.display='none';
-    });
+/* THEME TOGGLE */
+function toggleTheme(){
+    document.body.classList.toggle("light");
+    localStorage.setItem(
+        "theme",
+        document.body.classList.contains("light") ? "light" : "dark"
+    );
 }
-
-function viewStudent(btn){
-    const r = btn.closest('tr');
-    document.getElementById('mName').innerText = r.dataset.name;
-    document.getElementById('mScore').innerText =
-        `Score: ${r.dataset.score}/${r.dataset.total}`;
-    document.getElementById('mPercent').innerText =
-        `Percentage: ${r.dataset.percent}%`;
-    document.getElementById('mStatus').innerText =
-        Number(r.dataset.percent)>=40?'Status: Pass':'Status: Fail';
-    document.getElementById('mDate').innerText =
-        `Attempted on: ${r.dataset.date}`;
-    document.getElementById('studentModal').classList.add('active');
+if(localStorage.getItem("theme")==="light"){
+    document.body.classList.add("light");
 }
-
-function closeModal(){
-    document.getElementById('studentModal').classList.remove('active');
-}
-
-updateView();
 </script>
 
 </body>

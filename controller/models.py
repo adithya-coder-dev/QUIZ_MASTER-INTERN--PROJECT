@@ -46,7 +46,7 @@ class User(db.Model):
         backref="user",
         cascade="all, delete-orphan"
     )
-
+    is_active = db.Column(db.Boolean, default=True)  
 
 class Role(db.Model):
     __tablename__ = "role"
