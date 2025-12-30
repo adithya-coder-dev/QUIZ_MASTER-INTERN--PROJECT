@@ -4,7 +4,7 @@ from datetime import datetime
 from flask_login import current_user
 from flask import abort
 from flask_login import LoginManager, login_required, current_user
-
+from flask import send_from_directory
 from flask import (
     Flask, render_template, request,
     redirect, url_for, session, flash
@@ -18,9 +18,12 @@ from controller.models import (
     User, Role, UserRole,
     Student, Staff,
     Subject, Chapter, Quiz, Question,
-    QuizAttempt, UserAnswer
+    QuizAttempt, UserAnswer, Note
 )
 from sqlalchemy.orm import joinedload
+from google import genai
+from controller.llm_service import generate_mcq_questions
+import fitz
 # ============================================================
 # APP SETUP
 # ============================================================
@@ -78,6 +81,18 @@ with app.app_context():
         ))
         db.session.commit()
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+UPLOAD_NOTES_FOLDER = os.path.join(BASE_DIR, "uploads", "notes")
+os.makedirs(UPLOAD_NOTES_FOLDER, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
+
+app.config["UPLOAD_NOTES_FOLDER"] = UPLOAD_NOTES_FOLDER
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
    
 
 # ============================================================
@@ -904,6 +919,80 @@ def teacher_result_detail(attempt_id):
         attempt=attempt,
         answers=answers
     )
+# ============================================================
+# TEACHER -- NOTES
+# ============================================================
+@app.route("/teacher/notes", methods=["GET", "POST"])
+@login_required
+@role_required("teacher")
+def teacher_notes():
+    subjects = Subject.query.all()
+    chapters = Chapter.query.all()
+
+    if request.method == "POST":
+        title = request.form.get("title")
+        subject_id = request.form.get("subject_id")
+        chapter_id = request.form.get("chapter_id")
+        file = request.files.get("file")
+
+        if not file or file.filename == "":
+            flash("No file selected", "error")
+            return redirect(url_for("teacher_notes"))
+
+        if not allowed_file(file.filename):
+            flash("Invalid file type", "error")
+            return redirect(url_for("teacher_notes"))
+
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(app.config["UPLOAD_NOTES_FOLDER"], filename)
+        file.save(save_path)
+
+        note = Note(
+            title=title,
+            file_path=filename,
+            subject_id=subject_id,
+            chapter_id=chapter_id
+        )
+
+        db.session.add(note)
+        db.session.commit()
+
+        flash("Notes uploaded successfully", "success")
+        return redirect(url_for("teacher_notes"))
+
+    notes = Note.query.order_by(Note.uploaded_at.desc()).all()
+
+    return render_template(
+        "teacher/notes.html",
+        subjects=subjects,
+        chapters=chapters,
+        notes=notes
+    )
+@app.route("/teacher/notes/delete/<int:note_id>", methods=["POST"])
+@login_required
+@role_required("teacher")
+def delete_note(note_id):
+    note = Note.query.get_or_404(note_id)
+
+    file_path = os.path.join(app.config["UPLOAD_NOTES_FOLDER"], note.file_path)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    db.session.delete(note)
+    db.session.commit()
+
+    flash("Note deleted", "success")
+    return redirect(url_for("teacher_notes"))
+
+
+@app.route("/uploads/notes/<filename>")
+@login_required
+def serve_note_file(filename):
+    return send_from_directory(
+        app.config["UPLOAD_NOTES_FOLDER"],
+        filename,
+        as_attachment=False
+    )
 
 # ============================================================
 # TEACHER SUMMARY
@@ -1022,7 +1111,176 @@ def upload_profile_image():
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     return send_from_directory("uploads", filename)
+# ============================================================
+# GENERATE QUESTIONS --AI
+# ============================================================
+# ============================================================
+# TEACHER — AI GENERATE QUESTIONS
+# ============================================================
+@app.route("/teacher/ai/generate-questions", methods=["POST"])
+@login_required
+@role_required("teacher")
+def ai_generate_questions():
 
+    data = request.json
+    subject = Subject.query.get_or_404(data["subject_id"])
+    chapter = Chapter.query.get_or_404(data["chapter_id"])
+    difficulty = data.get("difficulty", "medium")
+
+    # 🔍 Try to get notes PDF for this chapter
+    note = Note.query.filter_by(chapter_id=chapter.chapter_id)\
+                     .order_by(Note.uploaded_at.desc())\
+                     .first()
+
+    if note:
+        notes_text = extract_pdf_text(note.file_path)
+
+        prompt = f"""
+You are a professional exam question setter.
+
+You MUST generate questions ONLY from the NOTES CONTENT below.
+If the answer is not present in the notes, DO NOT invent it.
+
+Generate exactly 5 MCQs in this STRICT format:
+
+Q1|Question text
+A|Option 1
+B|Option 2
+C|Option 3
+D|Option 4
+ANS|B
+
+RULES:
+- Use ONLY the notes content
+- Exam oriented
+- One correct answer
+- Difficulty: {difficulty}
+
+NOTES CONTENT START
+{notes_text}
+NOTES CONTENT END
+"""
+    else:
+        # 🔁 fallback (original behavior)
+        prompt = f"""
+You are a professional exam question setter.
+
+Generate exactly 5 MCQs in this STRICT format:
+
+Q1|Question text
+A|Option 1
+B|Option 2
+C|Option 3
+D|Option 4
+ANS|B
+
+Rules:
+- Exam oriented
+- One correct answer
+- Difficulty: {difficulty}
+
+Subject: {subject.name}
+Chapter: {chapter.name}
+"""
+
+    output = generate_mcq_questions(prompt)
+    return {"content": output}
+
+
+
+# ============================================================
+# TEACHER — AI SAVE QUESTIONS
+# ============================================================
+@app.route("/teacher/ai/save", methods=["POST"])
+@login_required
+@role_required("teacher")
+def save_ai_questions():
+
+    data = request.json
+    quiz_id = data["quiz_id"]
+    ai_text = data["content"]
+
+    parsed = parse_ai_questions(ai_text)
+    saved = 0
+
+    for q in parsed:
+        if is_duplicate(quiz_id, q["statement"]):
+            continue
+
+        db.session.add(Question(
+            quiz_id=quiz_id,
+            title="AI Question",
+            statement=q["statement"],
+            option_1=q["option_1"],
+            option_2=q["option_2"],
+            option_3=q["option_3"],
+            option_4=q["option_4"],
+            correct_option=q["correct_option"]
+        ))
+        saved += 1
+
+    db.session.commit()
+    return {"saved": saved}
+
+
+
+# ================= AI HELPERS =================
+
+def parse_ai_questions(text):
+    questions = []
+    blocks = text.strip().split("\n\n")
+
+    for block in blocks:
+        lines = block.splitlines()
+        if len(lines) < 6:
+            continue
+        try:
+            questions.append({
+                "statement": lines[0].split("|",1)[1],
+                "option_1": lines[1].split("|",1)[1],
+                "option_2": lines[2].split("|",1)[1],
+                "option_3": lines[3].split("|",1)[1],
+                "option_4": lines[4].split("|",1)[1],
+                "correct_option": ["A","B","C","D"].index(
+                    lines[5].split("|",1)[1]
+                ) + 1
+            })
+        except:
+            continue
+    return questions
+
+
+def is_duplicate(quiz_id, statement):
+    return Question.query.filter(
+        Question.quiz_id == quiz_id,
+        Question.statement.ilike(statement[:80] + "%")
+    ).first() is not None
+
+def extract_pdf_text(file_path, limit=12000):
+    """
+    file_path can be:
+    - OOP.pdf
+    - notes/OOP.pdf
+    - full absolute path
+    """
+
+    # normalize slashes (Windows safety)
+    file_path = file_path.replace("\\", "/")
+
+    # if absolute path, use as-is
+    if os.path.isabs(file_path):
+        path = file_path
+    else:
+        # always resolve from UPLOAD_NOTES_FOLDER
+        filename = os.path.basename(file_path)
+        path = os.path.join(app.config["UPLOAD_NOTES_FOLDER"], filename)
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Notes file not found at: {path}")
+
+    doc = fitz.open(path)
+    text = "\n".join(page.get_text() for page in doc)
+    return text[:limit]
 
 # ============================================================
 # LOGOUT

@@ -258,3 +258,32 @@ class UserAnswer(db.Model):
     is_correct = db.Column(db.Boolean)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Note(db.Model):
+    __tablename__ = "note"
+
+    note_id = db.Column(db.Integer, primary_key=True)
+
+    title = db.Column(db.String(200), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False)
+
+    subject_id = db.Column(
+        db.Integer,
+        db.ForeignKey("subject.subject_id"),  # ✅ FIXED
+        nullable=False
+    )
+
+    chapter_id = db.Column(
+        db.Integer,
+        db.ForeignKey("chapter.chapter_id"),  # ✅ FIXED
+        nullable=False
+    )
+
+    uploaded_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    # relationships (match model class names)
+    subject = db.relationship("Subject", backref="notes")
+    chapter = db.relationship("Chapter", backref="notes")
