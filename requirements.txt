@@ -5,3 +5,4 @@ gunicorn
 google-genai
 python-dotenv
 PyMuPDF
+gunicorn
