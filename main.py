@@ -48,9 +48,41 @@ UPLOAD_FOLDER = "uploads/profile_images"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-with app.app_context():
-    db.create_all()
+try:
+    with app.app_context():
+        db.create_all()
 
+        # ---------------- SEED ROLES ----------------
+        def get_or_create_role(role_name):
+            role = Role.query.filter_by(name=role_name).first()
+            if not role:
+                role = Role(name=role_name)
+                db.session.add(role)
+                db.session.commit()
+            return role
+
+        admin_role = get_or_create_role("admin")
+        teacher_role = get_or_create_role("teacher")
+        user_role = get_or_create_role("user")
+
+        # ---------------- SEED ADMIN ----------------
+        admin_user = User.query.filter_by(username="admin").first()
+        if not admin_user:
+            admin_user = User(
+                username="admin",
+                email="admin@qma.com",
+                password_hash=generate_password_hash("admin123"),
+                full_name="System Admin"
+            )
+            db.session.add(admin_user)
+            db.session.commit()
+            db.session.add(UserRole(
+                user_id=admin_user.user_id,
+                role_id=admin_role.role_id
+            ))
+            db.session.commit()
+except Exception as e:
+    print(f"Database initialization bypassed or unavailable: {e}")
     # ---------------- SEED ROLES ----------------
     def get_or_create_role(role_name):
         role = Role.query.filter_by(name=role_name).first()
