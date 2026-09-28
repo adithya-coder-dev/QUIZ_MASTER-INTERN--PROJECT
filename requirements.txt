@@ -2,3 +2,6 @@ Flask
 Flask-SQLAlchemy
 jinja2
 gunicorn
+google-genai
+python-dotenv
+PyMuPDF
